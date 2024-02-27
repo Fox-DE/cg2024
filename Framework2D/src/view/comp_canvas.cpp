@@ -6,7 +6,8 @@
 #include "imgui.h"
 #include "view/shapes/line.h"
 #include "view/shapes/rect.h"
-//#include "view/shapes/elli.h"
+#include "view/shapes/ellipse.h"
+#include"view/shapes/freehand.h"
 
 namespace USTC_CG
 {
@@ -61,9 +62,23 @@ void Canvas::set_elli()
     shape_type_ = kEllipse;
 }
 
+void Canvas::set_free()
+{
+    draw_status_ = false;
+    shape_type_ = kFreehand;
+}
+
 void Canvas::clear_shape_list()
 {
     shape_list_.clear();
+}
+
+void Canvas::undo()
+{
+    if (shape_list_.size() != 0)
+    {
+        shape_list_.pop_back();
+    }
 }
 
 void Canvas::draw_background()
@@ -130,8 +145,14 @@ void Canvas::mouse_click_event()
             }
             case USTC_CG::Canvas::kEllipse:
             {
-                current_shape_ = std::make_shared<Rect>(
+                current_shape_ = std::make_shared<Ellipse>(
                     start_point_.x, start_point_.y, end_point_.x, end_point_.y);
+                break;
+            }
+            case USTC_CG::Canvas::kFreehand:
+            {
+                current_shape_ = std::make_shared<Freehand>(
+                    start_point_);
                 break;
             }
             default: break;
@@ -156,7 +177,7 @@ void Canvas::mouse_move_event()
         end_point_ = mouse_pos_in_canvas();
         if (current_shape_)
         {
-            current_shape_->update(end_point_.x, end_point_.y);
+             current_shape_->update(end_point_.x, end_point_.y);
         }
     }
 }
@@ -164,6 +185,15 @@ void Canvas::mouse_move_event()
 void Canvas::mouse_release_event()
 {
     // HW1_TODO: Drawing rule for more primitives
+    if (draw_status_ && shape_type_ == kFreehand)
+    {
+        draw_status_ = false;
+        if (current_shape_)
+        {
+             shape_list_.push_back(current_shape_);
+             current_shape_.reset();
+        }
+    }
 }
 
 ImVec2 Canvas::mouse_pos_in_canvas() const

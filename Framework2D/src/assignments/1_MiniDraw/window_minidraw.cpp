@@ -41,11 +41,28 @@ void MiniDraw::draw_canvas()
             std::cout << "Set shape to Rect" << std::endl;
             p_canvas_->set_rect();
         }
+        ImGui::SameLine();
         if (ImGui::Button("Ellipse"))
         {
             std::cout << "Set shape to Ellipse" << std::endl;
             p_canvas_->set_elli();
         }
+        ImGui::SameLine();
+        if (ImGui::Button("ClearAll"))
+        {
+            p_canvas_->clear_shape_list();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Undo"))
+        {
+            p_canvas_->undo();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Freehand"))
+        {
+            p_canvas_->set_free();
+        }
+
 
         // HW1_TODO: More primitives
         //    - Ellipse

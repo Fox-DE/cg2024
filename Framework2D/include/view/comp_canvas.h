@@ -29,6 +29,7 @@ class Canvas : public Component
         kRect = 2,
         kEllipse = 3,
         kPolygon = 4,
+        kFreehand = 5,
     };
 
     // Shape type setters.
@@ -36,9 +37,12 @@ class Canvas : public Component
     void set_line();
     void set_rect();
     void set_elli();
+    void set_free();
 
     // Clears all shapes from the canvas.
     void clear_shape_list();
+    //clear the latest shape
+    void undo();
 
     // Set canvas attributes (position and size).
     void set_attributes(const ImVec2& min, const ImVec2& size);
