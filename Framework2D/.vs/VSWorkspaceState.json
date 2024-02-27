@@ -1,0 +1,21 @@
+{
+  "OutputFoldersPerTargetSystem": {
+    "本地计算机": [
+      "out\\build\\x64-Debug",
+      "out\\install\\x64-Debug"
+    ]
+  },
+  "ExpandedNodes": [
+    "",
+    "\\include",
+    "\\include\\view",
+    "\\include\\view\\shapes",
+    "\\src",
+    "\\src\\assignments",
+    "\\src\\assignments\\1_MiniDraw",
+    "\\src\\view",
+    "\\src\\view\\shapes"
+  ],
+  "SelectedNode": "\\src\\view\\shapes\\line.cpp",
+  "PreviewInSolutionExplorer": false
+}

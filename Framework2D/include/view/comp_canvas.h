@@ -35,6 +35,7 @@ class Canvas : public Component
     void set_default();
     void set_line();
     void set_rect();
+    void set_elli();
 
     // Clears all shapes from the canvas.
     void clear_shape_list();
