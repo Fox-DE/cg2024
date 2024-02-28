@@ -50,19 +50,27 @@ void MiniDraw::draw_canvas()
         ImGui::SameLine();
         if (ImGui::Button("ClearAll"))
         {
+            std::cout << "Clear All" << std::endl;
             p_canvas_->clear_shape_list();
         }
         ImGui::SameLine();
         if (ImGui::Button("Undo"))
         {
+            std::cout << "Delete the latest figure" << std::endl;
             p_canvas_->undo();
         }
         ImGui::SameLine();
         if (ImGui::Button("Freehand"))
         {
+            std::cout << "Set shape to Freehand" << std::endl;
             p_canvas_->set_free();
         }
-
+        ImGui::SameLine();
+        if (ImGui::Button("Polygon"))
+        {
+            std::cout << "Set shape to Polygon" << std::endl;
+            p_canvas_->set_polygon();
+        }
 
         // HW1_TODO: More primitives
         //    - Ellipse

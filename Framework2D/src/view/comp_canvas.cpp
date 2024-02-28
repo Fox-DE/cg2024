@@ -8,6 +8,7 @@
 #include "view/shapes/rect.h"
 #include "view/shapes/ellipse.h"
 #include"view/shapes/freehand.h"
+#include"view/shapes/polygon.h"
 
 namespace USTC_CG
 {
@@ -15,7 +16,8 @@ void Canvas::draw()
 {
     draw_background();
 
-    if (is_hovered_ && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    if (is_hovered_ && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+        ImGui::IsMouseClicked(ImGuiMouseButton_Right)))
         mouse_click_event();
     mouse_move_event();
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -66,6 +68,12 @@ void Canvas::set_free()
 {
     draw_status_ = false;
     shape_type_ = kFreehand;
+}
+
+void Canvas::set_polygon()
+{
+    draw_status_ = false;
+    shape_type_ = kPolygon;
 }
 
 void Canvas::clear_shape_list()
@@ -155,7 +163,31 @@ void Canvas::mouse_click_event()
                     start_point_);
                 break;
             }
+            case USTC_CG::Canvas::kPolygon:
+            {
+                current_shape_ = std::make_shared<Polygon>(start_point_);
+                break;
+            }
             default: break;
+        }
+    }
+    else if (draw_status_ && shape_type_ == kPolygon)
+    {
+        start_point_ = end_point_ = mouse_pos_in_canvas();
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
+            current_shape_->AddVertex(start_point_.x,start_point_.y);
+        }
+        else
+        {
+            draw_status_ = false;
+            current_shape_->AddVertex(start_point_.x,start_point_.y);
+            current_shape_->SetStatus(true);
+            if (current_shape_)
+            {
+                shape_list_.push_back(current_shape_);
+                current_shape_.reset();
+            }
         }
     }
     else

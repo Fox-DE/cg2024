@@ -39,5 +39,14 @@ class Shape
      * @param x, y Dragging point. e.g. end point of a line.
      */
     virtual void update(float x, float y) = 0;
+
+    virtual void AddVertex(float x,float y)
+    {
+    }
+    //add new vertex for Polygon
+
+    virtual void SetStatus(bool status)
+    {
+    }
 };
 }  // namespace USTC_CG

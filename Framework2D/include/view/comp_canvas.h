@@ -38,6 +38,7 @@ class Canvas : public Component
     void set_rect();
     void set_elli();
     void set_free();
+    void set_polygon();
 
     // Clears all shapes from the canvas.
     void clear_shape_list();
