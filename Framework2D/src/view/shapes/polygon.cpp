@@ -14,7 +14,6 @@ Polygon::Polygon(ImVec2 point)
       end_point_y_(point.y)
 {
     Vertex.push_back(point);
-    //Closure_Status = false;
 }
 
 void Polygon::draw(const USTC_CG::Shape::Config& config) const
@@ -62,6 +61,7 @@ void Polygon::draw(const USTC_CG::Shape::Config& config) const
                 config.line_color[3]),
             config.line_thickness);
     }
+    //draw the line between the first vertex and the last one, make the polygon closed
 }
 
 void Polygon::update(float x, float y)

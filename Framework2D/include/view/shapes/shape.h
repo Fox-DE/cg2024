@@ -40,13 +40,10 @@ class Shape
      */
     virtual void update(float x, float y) = 0;
 
-    virtual void AddVertex(float x,float y)
-    {
-    }
+    virtual void AddVertex(float x, float y) = 0;
     //add new vertex for Polygon
 
-    virtual void SetStatus(bool status)
-    {
-    }
+    virtual void SetStatus(bool status) = 0;
+    //used to set status for Polygon or others
 };
 }  // namespace USTC_CG

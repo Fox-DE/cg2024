@@ -25,10 +25,12 @@ class Polygon : public Shape
     void update(float x, float y) override;
 
     void AddVertex(float x,float y) override;
+    //add new vertex for polygon
 
    private:
     float start_point_x_, start_point_y_, end_point_x_, end_point_y_;
     std::vector<ImVec2> Vertex;
     bool Closure_Status=false;
+    //to indicate whether the drawing is over, if true, draw the line between the first vertex and the last one
 };
 }  // namespace USTC_CG

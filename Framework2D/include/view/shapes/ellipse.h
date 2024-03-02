@@ -31,6 +31,13 @@ class Ellipse : public Shape
     // interaction
     void update(float x, float y) override;
 
+    void SetStatus(bool status) override
+    {
+    }
+    void AddVertex(float x, float y) override
+    {
+    }
+
    private:
     float start_point_x_, start_point_y_, end_point_x_, end_point_y_;
 };

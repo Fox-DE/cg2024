@@ -33,6 +33,7 @@ void Freehand::draw(const USTC_CG::Shape::Config& config) const
                 config.line_color[3]),
             config.line_thickness);
     }
+    //draw lines between points, which makes the figure seem continuous
 }
 
 void Freehand::update(float x, float y)
