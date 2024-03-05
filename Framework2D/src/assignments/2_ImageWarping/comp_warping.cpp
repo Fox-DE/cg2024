@@ -2,6 +2,10 @@
 
 #include <cmath>
 
+#include"ImageWarping.h"
+
+#include"IDW.h"
+
 namespace USTC_CG
 {
 using uchar = unsigned char;
@@ -104,6 +108,48 @@ void CompWarping::gray_scale()
     }
     // After change the image, we should reload the image data to the renderer
     update();
+}
+
+void CompWarping::IDW()
+{
+   
+    IDWalgo IDW_;
+    IDW_.GetData(start_points_, end_points_);
+
+    Image Image_tmp(*data_);
+    int width = data_->width();
+    int height = data_->height();
+    
+    ImVec2 q_tmp,p_tmp;
+    //initialize the graph
+    for (int y = 0; y < data_->height(); ++y)
+    {
+        for (int x = 0; x < data_->width(); ++x)
+        {
+            data_->set_pixel(x, y, { 255, 255, 255 });
+        }
+    }
+
+     for (size_t i = 0; i < width; i++)
+    {
+        for (int j = 0; j < height; j++)
+        {
+            p_tmp.x = i;
+            p_tmp.y = j;
+            q_tmp = IDW_.Warping(p_tmp);
+
+
+            if (q_tmp.x < width && q_tmp.y < height &&
+                q_tmp.x >= 0 && q_tmp.y >= 0)
+                data_->set_pixel(q_tmp.x,q_tmp.y, Image_tmp.get_pixel(i, j));
+        }
+    }
+    update();
+}
+
+void CompWarping::RBF()
+{
+
 }
 void CompWarping::warping()
 {

@@ -76,6 +76,15 @@ void ImageWarping::draw_toolbar()
             p_image_->init_selections();
         }
         // HW2_TODO: You can add more interactions for IDW, RBF, etc.
+        if (ImGui::MenuItem("IDW") && p_image_)
+        {
+            p_image_->enable_selecting(false);
+            p_image_->IDW();
+            p_image_->init_selections();
+        }
+        if (ImGui::MenuItem("RBF") && p_image_)
+        {
+        }
         ImGui::Separator();
         if (ImGui::MenuItem("Restore") && p_image_)
         {

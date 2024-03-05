@@ -1,6 +1,9 @@
 #pragma once
 
 #include "view/comp_image.h"
+#include"ImageWarping.h"
+#include"IDW.h"
+#include"RBF.h"
 
 namespace USTC_CG
 {
@@ -19,6 +22,8 @@ class CompWarping : public ImageEditor
     void gray_scale();
     void warping();
     void restore();
+    void IDW();
+    void RBF();
 
     // Point selecting interaction
     void enable_selecting(bool flag);
