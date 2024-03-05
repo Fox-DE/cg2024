@@ -84,6 +84,9 @@ void ImageWarping::draw_toolbar()
         }
         if (ImGui::MenuItem("RBF") && p_image_)
         {
+            p_image_->enable_selecting(false);
+            p_image_->RBF();
+            p_image_->init_selections();
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Restore") && p_image_)
