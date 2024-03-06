@@ -24,6 +24,7 @@ class CompWarping : public ImageEditor
     void restore();
     void IDW();
     void RBF();
+    void FixImage();
 
     // Point selecting interaction
     void enable_selecting(bool flag);

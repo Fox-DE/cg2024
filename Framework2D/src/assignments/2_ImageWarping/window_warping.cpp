@@ -93,6 +93,10 @@ void ImageWarping::draw_toolbar()
         {
             p_image_->restore();
         }
+        if (ImGui::MenuItem("Fix Image"))
+        {
+            p_image_->FixImage();
+        }
         ImGui::EndMainMenuBar();
     }
 }
