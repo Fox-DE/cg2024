@@ -13,6 +13,7 @@ class RBFalgo : public ImageWarping
     double dist(ImVec2 p, ImVec2 q);
     void Init_A_b();
     void Init_Alpha();
+    void Init_r();
 
    private:
     double u=1;

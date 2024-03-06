@@ -14,70 +14,21 @@ double RBFalgo::dist(ImVec2 p, ImVec2 q)
 void RBFalgo::Init_A_b()
 {
     // Init A and b
-    const int n = start_points_.size();
+    int n = start_points_.size();
     A(0, 0) = 1;
     A(0, 1) = 0;
     A(1, 0) = 0;
     A(1, 1) = 1;
     b[0] = 0;
     b[1] = 0;
-    if (n == 0)
+    
+    if (n == 1)
     {
-        A(0, 0) = 1;
-        A(0, 1) = 0;
-        A(1, 0) = 0;
-        A(1, 1) = 1;
-        b[0] = 0;
-        b[1] = 0;
-    }
-    else if (n == 1)
-    {
-        A(0, 0) = 1;
-        A(0, 1) = 0;
-        A(1, 0) = 0;
-        A(1, 1) = 1;
+        
         b[0] = end_points_[0].x - start_points_[0].x;
         b[1] = end_points_[0].y - start_points_[0].y;
     }
-    else if (n == 2)
-    {
-        A(0, 1) = 0;
-        A(1, 0) = 0;
-        A(0, 0) = (start_points_[1].x - start_points_[0].x) == 0
-                      ? 1
-                      : (end_points_[1].x - end_points_[0].x) /
-                            double(start_points_[1].x - start_points_[0].x);
-        A(1, 1) = (start_points_[1].y - start_points_[0].y) == 0
-                      ? 1
-                      : (end_points_[1].y - end_points_[0].y) /
-                            double(start_points_[1].y - start_points_[0].y);
-        b[0] = end_points_[0].x - A(0, 0) * start_points_[0].x;
-        b[1] = end_points_[1].y - A(1, 1) * start_points_[1].y;
-    }
-    else
-    {
-        Matrix<double, Dynamic, 3> X;
-        Matrix<double, Dynamic, 2> Y;
-        X.resize(n, 3);
-        Y.resize(n, 2);
-        Matrix<double, 3, 2> parameters;
-        parameters.fill(0.0);
-        for (int i = 0; i < n; i++)
-        {
-            X(i, 0) = 1;
-            X(i, 1) = start_points_[i].x;
-            X(i, 2) = start_points_[i].y;
-            Y(i, 0) = end_points_[i].x;
-            Y(i, 1) = end_points_[i].y;
-        }
-        parameters = (X.transpose() * X).inverse() * X.transpose() * Y;
-        b[0] = parameters(0, 0);
-        b[1] = parameters(0, 1);
-        A(0, 0) = parameters(1, 0);
-        A(1, 0) = parameters(1, 1);
-        A(0, 1) = parameters(2, 0);
-        A(1, 1) = parameters(2, 1);
-    }
+    
     
 }
 
@@ -112,13 +63,34 @@ void RBFalgo::Init_Alpha()
     }
 }
 
+void RBFalgo::Init_r()
+{ 
+    int n = start_points_.size();
+    if (n >= 2)
+    {
+        double temp = dist(start_points_[0], start_points_[1]);
+        double tmp;
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = i+1; j < n; j++)
+            {
+                tmp = dist(start_points_[i], start_points_[j]);
+                if (tmp < temp) temp = tmp;
+            }
+        }
+        r = temp;
+    }
+}
+
 ImVec2 RBFalgo::Warping(ImVec2 p)
 {    
     int n = start_points_.size();
     if (n== 0) 
-        return p;
+        return p; 
+    Init_r();
     Init_A_b();
     Init_Alpha();
+ 
 
 
     ImVec2 q;
