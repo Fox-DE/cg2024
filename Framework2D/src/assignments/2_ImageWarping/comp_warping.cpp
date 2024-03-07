@@ -320,68 +320,85 @@ CompWarping::fisheye_warping(int x, int y, int width, int height)
 
 void CompWarping::FixImage()
 {
-    int search_num = 16;
-    int f = 2;
-    Annoy::AnnoyIndex<
-        int,
-        float,
-        Annoy::Euclidean,
-        Annoy::Kiss32Random,
-        Annoy::AnnoyIndexSingleThreadedBuildPolicy>
-        index(f);
-    int width = data_->width();
-    int height = data_->height();
-    for (int j = 0; j < height; j++)
+    if (1)
     {
-        for (int i = 0; i < width; i++)
+        int search_num = 9;
+        
+        int f = 2;
+        Annoy::AnnoyIndex<
+            int,
+            float,
+            Annoy::Euclidean,
+            Annoy::Kiss32Random,
+            Annoy::AnnoyIndexSingleThreadedBuildPolicy>
+            index(f);
+        int width = data_->width();
+        int height = data_->height();
+        for (int j = 0; j < height; j++)
         {
-            std::vector<float> vec(f);
-            vec[0] = i;//ºá×ø±ê
-            vec[1] = j;//×Ý×ø±ê
-            index.add_item(j * width + i, vec.data());
-        }
-    }
-    index.build(10);
-    std::vector<int> closet_items; 
-    std::vector<float> distances;
-    for (int j = 0; j < height; j++)
-    {
-        for (int i = 0; i < width; i++)
-        {
-            const auto color = data_->get_pixel(i, j);
-            if (color[0] == 255 && color[1] == 255 && color[2] == 255)
+            for (int i = 0; i < width; i++)
             {
-                closet_items.clear();
-                distances.clear();
-                index.get_nns_by_item(
-                    j * width + i, search_num, -1, &closet_items,&distances);
-                
-                const auto color_tmp = data_->get_pixel(
-                    closet_items[0] - int(closet_items[0] / width)*width,
-                    int(closet_items[0] / width));
-                int value_r = (int)color_tmp[0];
-                int value_g = (int)color_tmp[1];
-                int value_b = (int)color_tmp[2];
-                
-                for (int k = 1; k < closet_items.size(); k++)
-                {
-                    const auto color_tmp = data_->get_pixel(
-                        closet_items[k] - int(closet_items[k] / width) * width,
-                        int(closet_items[k] / width));
-                    value_r = value_r + (int)color_tmp[0];
-                    value_g = value_g + (int)color_tmp[1];
-                    value_b = value_b + (int)color_tmp[2];
-                }
-                value_r = (int)value_r / search_num;
-                value_g = (int)value_g / search_num;
-                value_b = (int)value_b / search_num;
-                data_->set_pixel(
-                    i, j, { (uchar)value_r, (uchar)value_g, (uchar)value_b });
-                
+                std::vector<float> vec(f);
+                vec[0] = i;  // ºá×ø±ê
+                vec[1] = j;  // ×Ý×ø±ê
+                index.add_item(j * width + i, vec.data());
             }
         }
+        index.build(10);
+        std::vector<int> closet_items;
+        std::vector<float> distances;
+        for (int j = 0; j < height; j++)
+        {
+            for (int i = 0; i < width; i++)
+            {
+                const auto color = data_->get_pixel(i, j);
+                if (color[0] == 255 && color[1] == 255 && color[2] == 255)
+                {
+
+                    closet_items.clear();
+                    distances.clear();
+                    index.get_nns_by_item(
+                        j * width + i,
+                        search_num,
+                        -1,
+                        &closet_items,
+                        &distances);
+                    int count = 0;
+                  
+                    /*int value_r = (int)color_tmp[0];
+                    int value_g = (int)color_tmp[1];
+                    int value_b = (int)color_tmp[2];*/
+                    int value_r = 0;
+                    int value_g = 0;
+                    int value_b = 0;
+                    for (int k = 1; k < closet_items.size(); k++)
+                    {
+                        const auto color_tmp = data_->get_pixel(
+                            closet_items[k] -
+                                int(closet_items[k] / width) * width,
+                            int(closet_items[k] / width));
+                       
+                        
+                            value_r = value_r + (int)color_tmp[0];
+                            value_g = value_g + (int)color_tmp[1];
+                            value_b = value_b + (int)color_tmp[2];
+                            count++;
+                        
+                    }
+                    
+                        value_r = (int)value_r / (search_num - 1);
+                        value_g = (int)value_g / (search_num - 1);
+                        value_b = (int)value_b / (search_num - 1);
+                        data_->set_pixel(
+                            i,
+                            j,
+                            { (uchar)value_r, (uchar)value_g, (uchar)value_b });
+                    
+                }
+            }
+        }
+        update();
     }
-    update();
 }
 
 }  // namespace USTC_CG
