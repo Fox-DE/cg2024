@@ -4,6 +4,8 @@
 #include"ImageWarping.h"
 #include"IDW.h"
 #include"RBF.h"
+#include"annoy/annoylib.h"
+#include<vector>
 
 namespace USTC_CG
 {
@@ -31,6 +33,7 @@ class CompWarping : public ImageEditor
     void select_points();
     void init_selections();
 
+    void init_FixedList();
    private:
     // Store the original image data
     std::shared_ptr<Image> back_up_;
@@ -44,6 +47,10 @@ class CompWarping : public ImageEditor
    private:
     // A simple "fish-eye" warping function
     std::pair<int, int> fisheye_warping(int x, int y, int width, int height);
+
+    private:
+    std::vector<std::vector<bool>> ToBeFixed;
+     bool FixedListStatus = false;
 };
 
 }  // namespace USTC_CG
