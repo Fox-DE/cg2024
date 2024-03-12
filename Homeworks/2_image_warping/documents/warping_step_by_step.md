@@ -8,7 +8,7 @@
 
 ## 说明
 
-- 请确保已经按照 [ImGui 程序框架配置说明](../../../Homeworks/1_mini_draw/documents/framework_introduction.md) 配置成功框架代码，这个时候应该可以运行成功 `2_ImageWarping` 项目，已经实现了 `Line` 和 `Rectangle` 的绘制；
+- 请确保已经按照 [ImGui 程序框架配置说明](../../../Homeworks/1_mini_draw/documents/framework_introduction.md) 配置成功框架代码，这个时候应该可以运行成功 `2_ImageWarping` 项目；
 - 善用 VS Code 的全局搜索功能，快捷键 `Ctrl+Shift+F`，例如你可以使用这个功能全局搜索 `HW2_TODO` 的提示，帮助快速定位到关键部分。
 - **符合项目要求的结构设计、实现方法有很多，你不一定要严格按照下面的提示来实现，如果你有更好的想法，请务必实现它，并且在报告文件中详细描述。**
 
@@ -73,7 +73,7 @@ std::vector<ImVec2> start_points_, end_points_;
 ### Eigen库
 
 - 实现RBF方法需要求解线性方程组，你可以自己实现，也可以从网上找其他程序或库来用
-- 强烈推荐使用 Eigen 库来求解线性方程组，Eigen 库是强大的数学算法库，是计算机图形学必须使用的算法库
+- 强烈推荐使用 Eigen 库来求解线性方程组，Eigen 库是强大的数学算法库，是计算机图形学必须了解的算法库
 - 我们提供了 Eigen 库的使用示例：[eigen_example](eigen_example/) 
 
 > [eigen_example](eigen_example/) 演示的添加依赖的方式重点掌握，另外为了保证项目的简洁性，不要将依赖部分加到 git 版本管理中，使用 [.gitignore](../../../.gitignore) 忽略掉 [eigen_example/src/_deps/](eigen_example/src/_deps/) 
