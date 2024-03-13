@@ -3,6 +3,7 @@
 #include "comp_source_image.h"
 #include "view/comp_image.h"
 
+
 namespace USTC_CG
 {
 class CompTargetImage : public ImageEditor
@@ -33,6 +34,7 @@ class CompTargetImage : public ImageEditor
     void set_seamless();
     // The clone function
     void clone();
+    void preDecomposition();
 
    private:
     // Store the original image data
@@ -44,6 +46,10 @@ class CompTargetImage : public ImageEditor
     ImVec2 mouse_position_;
     bool edit_status_ = false;
     bool flag_realtime_updating = false;
+
+    Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::RowMajor>> solver;
+    //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+    //Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::AMDOrdering<int>> solver;
 };
 
 }  // namespace USTC_CG

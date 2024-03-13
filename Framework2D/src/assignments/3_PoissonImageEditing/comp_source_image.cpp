@@ -74,9 +74,16 @@ void CompSourceImage::select_region()
             //
             // For polygon or freehand regions, you should inplement the
             // "scanning line" algorithm, which is a well-known algorithm in CG.
+            Index_.resize(image_height_, image_width_);
             for (int i = 0; i < selected_region_->width(); ++i)
+            {
                 for (int j = 0; j < selected_region_->height(); ++j)
+                {
                     selected_region_->set_pixel(i, j, { 0 });
+                    Index_(j, i) = -1;//Index_ is ColMajor 
+                }
+            }
+            point_count = 0;
             switch (region_type_)
             {
                 case USTC_CG::CompSourceImage::kDefault: break;
@@ -91,6 +98,14 @@ void CompSourceImage::select_region()
                              ++j)
                         {
                             selected_region_->set_pixel(i, j, { 255 });
+                            if (i == static_cast<int>(start_.x) ||
+                                i == static_cast<int>(end_.x) - 1 ||
+                                j == static_cast<int>(start_.y) ||
+                                j == static_cast<int>(end_.y) - 1)
+                                selected_region_->set_pixel(i, j, { 100 });//100 means this pixel is boundary
+
+                            Index_(j, i) = point_count;
+                            point_count++;
                         }
                     }
                     break;
@@ -128,5 +143,15 @@ std::shared_ptr<Image> CompSourceImage::get_data()
 ImVec2 CompSourceImage::get_position() const
 {
     return start_;
+}
+
+int CompSourceImage::get_point_count()const
+{
+    return point_count;
+}
+
+int CompSourceImage::get_index(int i, int j)const
+{
+    return Index_(i, j);
 }
 }  // namespace USTC_CG

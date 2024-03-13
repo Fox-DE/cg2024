@@ -1,6 +1,9 @@
 #pragma once
 
 #include "view/comp_image.h"
+#include <Eigen/Sparse>
+#include <Eigen/SparseLU>
+#include <Eigen/Dense>
 
 namespace USTC_CG
 {
@@ -29,7 +32,10 @@ class CompSourceImage : public ImageEditor
     // Get the image data
     std::shared_ptr<Image> get_data();
     // Get the position to locate the region in the target image
+
     ImVec2 get_position() const;
+    int get_point_count() const;
+    int get_index(int i, int j) const;
 
    private:
     RegionType region_type_ = kRect;
@@ -37,6 +43,10 @@ class CompSourceImage : public ImageEditor
     ImVec2 start_, end_;
     bool flag_enable_selecting_region_ = false;
     bool draw_status_ = false;
+
+    
+    int point_count=0;
+    Eigen::MatrixXi Index_ = Eigen::MatrixXi();    //index of the pixel
 };
 
 }  // namespace USTC_CG
