@@ -89,25 +89,31 @@ void CompSourceImage::select_region()
                 case USTC_CG::CompSourceImage::kDefault: break;
                 case USTC_CG::CompSourceImage::kRect:
                 {
+                    mask_width = end_.x - start_.x;
+                    mask_height = end_.y - start_.y;
                     for (int i = static_cast<int>(start_.x);
-                         i < static_cast<int>(end_.x);
-                         ++i)
-                    {
-                        for (int j = static_cast<int>(start_.y);
-                             j < static_cast<int>(end_.y);
-                             ++j)
+                             i < static_cast<int>(end_.x);
+                             ++i)
                         {
-                            selected_region_->set_pixel(i, j, { 255 });
-                            if (i == static_cast<int>(start_.x) ||
-                                i == static_cast<int>(end_.x) - 1 ||
-                                j == static_cast<int>(start_.y) ||
-                                j == static_cast<int>(end_.y) - 1)
-                                selected_region_->set_pixel(i, j, { 100 });//100 means this pixel is boundary
+                            for (int j = static_cast<int>(start_.y);
+                                 j < static_cast<int>(end_.y);
+                                 ++j)
+                            {
+                                selected_region_->set_pixel(i, j, { 255 });
+                                if (i == static_cast<int>(start_.x) ||
+                                    i == static_cast<int>(end_.x) - 1 ||
+                                    j == static_cast<int>(start_.y) ||
+                                    j == static_cast<int>(end_.y) - 1)
+                                    selected_region_->set_pixel(
+                                        i, j, { 100 });  // 100 means this pixel
+                                                         // is boundary
 
-                            Index_(j, i) = point_count;
-                            point_count++;
+                                Index_(j, i) = point_count;
+                                point_count++;
+                            }
                         }
-                    }
+                    
+
                     break;
                 }
                 default: break;
@@ -143,6 +149,16 @@ std::shared_ptr<Image> CompSourceImage::get_data()
 ImVec2 CompSourceImage::get_position() const
 {
     return start_;
+}
+
+int CompSourceImage::get_mask_width()const
+{
+    return mask_width;
+}
+
+int CompSourceImage::get_mask_height() const
+{
+    return mask_height;
 }
 
 int CompSourceImage::get_point_count()const

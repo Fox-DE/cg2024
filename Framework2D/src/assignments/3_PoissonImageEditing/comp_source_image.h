@@ -37,6 +37,9 @@ class CompSourceImage : public ImageEditor
     int get_point_count() const;
     int get_index(int i, int j) const;
 
+    int get_mask_width() const;
+    int get_mask_height() const;
+
    private:
     RegionType region_type_ = kRect;
     std::shared_ptr<Image> selected_region_;
@@ -44,7 +47,8 @@ class CompSourceImage : public ImageEditor
     bool flag_enable_selecting_region_ = false;
     bool draw_status_ = false;
 
-    
+    int mask_width;
+    int mask_height;
     int point_count=0;
     Eigen::MatrixXi Index_ = Eigen::MatrixXi();    //index of the pixel
 };

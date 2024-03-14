@@ -47,6 +47,7 @@ class CompTargetImage : public ImageEditor
     bool edit_status_ = false;
     bool flag_realtime_updating = false;
 
+    //bool ReadyToClone = 0;
     Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::RowMajor>> solver;
     //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
     //Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::AMDOrdering<int>> solver;

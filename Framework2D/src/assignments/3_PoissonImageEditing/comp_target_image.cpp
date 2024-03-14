@@ -121,39 +121,93 @@ void CompTargetImage::clone()
         }
         case USTC_CG::CompTargetImage::kSeamless:
         {
-            // You should delete this block and implement your own seamless
-            // cloning. For each pixel in the selected region, calculate the
-            // final RGB color by solving Poisson Equations.
-            restore();
-
-            /*for (int i = 0; i < mask->width(); ++i)
-            {
-                for (int j = 0; j < mask->height(); ++j)
+            if (static_cast<int>(mouse_position_.x) +
+                source_image_->get_mask_width()<image_width_&&
+                static_cast<int>(mouse_position_.y) +
+                        source_image_->get_mask_height() <
+                    image_height_)
+                //check out if the picture is out of range
+                
+                // You should delete this block and implement your own seamless
+                // cloning. For each pixel in the selected region, calculate the
+                // final RGB color by solving Poisson Equations.
+             {   
+                restore();
+                int point_count = source_image_->get_point_count();
+                Eigen::MatrixXd b(point_count, 3);
+                
+                for (int i = 0; i < mask->width(); ++i)
                 {
-                    int tar_x =
-                        static_cast<int>(mouse_position_.x) + i -
-                        static_cast<int>(source_image_->get_position().x);
-                    int tar_y =
-                        static_cast<int>(mouse_position_.y) + j -
-                        static_cast<int>(source_image_->get_position().y);
-                    if (0 <= tar_x && tar_x < image_width_ && 0 <= tar_y &&
-                        tar_y < image_height_ && mask->get_pixel(i, j)[0] > 0)
+                    for (int j = 0; j < mask->height(); ++j)
                     {
-                        data_->set_pixel(
-                            tar_x,
-                            tar_y,
-                            source_image_->get_data()->get_pixel(i, j));
+                        if (mask->get_pixel(i, j)[0] !=
+                            0)  // this pixel is interior or boundary
+                        {
+                            int tar_x = static_cast<int>(mouse_position_.x) +
+                                        i -
+                                        static_cast<int>(
+                                            source_image_->get_position().x);
+                            int tar_y = static_cast<int>(mouse_position_.y) +
+                                        j -
+                                        static_cast<int>(
+                                            source_image_->get_position().y);
+                            // tar_x,y为对应的target_image中的点
+                            int index = source_image_->get_index(j, i);
+                            b(index, 0) = 0;
+                            b(index, 1) = 0;
+                            b(index, 2) = 0;
+                            int row_neighbor[4] = { 1, -1, 0, 0 };
+                            int col_neighbor[4] = { 0, 0, -1, 1 };
+                            auto color_tmp =
+                                source_image_->get_data()->get_pixel(i, j);
+                            // color_tmp为源图像该点处的rgb值
+                            for (int k = 0; k < 4; k++)
+                            {
+                                int tar_tmp_x = tar_x + row_neighbor[k];
+                                int tar_tmp_y = tar_y + col_neighbor[k];
+                                int row_tmp = j + col_neighbor[k];
+                                int col_tmp = i + row_neighbor[k];
+                                int index_tmp =
+                                    source_image_->get_index(row_tmp, col_tmp);
+                                if ((row_tmp < 0) || (col_tmp < 0) ||
+                                    (row_tmp > height - 1) ||
+                                    (col_tmp > width - 1))
+                                {
+                                    continue;
+                                }  // 越界则跳过
+
+                                auto color =
+                                    source_image_->get_data()->get_pixel(
+                                        col_tmp, row_tmp);
+                                // color即为该邻点对应的rgb值
+
+                                b(index, 0) +=
+                                    (int)color_tmp[0] - (int)color[0];
+                                b(index, 1) +=
+                                    (int)color_tmp[1] - (int)color[1];
+                                b(index, 2) +=
+                                    (int)color_tmp[2] - (int)color[2];
+
+                                if (mask->get_pixel(col_tmp, row_tmp)[0] == 100)
+                                // 即该点为边界项
+                                {
+                                    auto color =
+                                        data_->get_pixel(tar_tmp_x, tar_tmp_y);
+                                    b(index, 0) += (int)color[0];
+                                    b(index, 1) += (int)color[1];
+                                    b(index, 2) += (int)color[2];
+                                }
+
+                                
+                            }
+                        }
                     }
                 }
-            }*/
-            int point_count = source_image_->get_point_count();
-            Eigen::MatrixXd b(point_count,3);
-            //Eigen::SparseMatrix<double, Eigen::RowMajor> b(point_count, 3);
-            for (int i = 0; i < mask->width(); ++i)
-            {
-                for (int j = 0; j < mask->height(); ++j)
+                Eigen::MatrixXd f = solver.solve(b);
+
+                for (int i = 0; i < mask->width(); ++i)
                 {
-                    if (mask->get_pixel(i, j)[0] != 0)//this pixel is interior or boundary
+                    for (int j = 0; j < mask->height(); ++j)
                     {
                         int tar_x =
                             static_cast<int>(mouse_position_.x) + i -
@@ -161,102 +215,36 @@ void CompTargetImage::clone()
                         int tar_y =
                             static_cast<int>(mouse_position_.y) + j -
                             static_cast<int>(source_image_->get_position().y);
-                        //tar_x,y为对应的target_image中的点
-                        int index = source_image_->get_index(j, i);
-                        b(index, 0) = 0;
-                        b(index, 1) = 0;
-                        b(index, 2) = 0;
-                        int row_neighbor[4] = { 1, -1, 0, 0 };
-                        int col_neighbor[4] = { 0, 0, -1, 1 };
-                        auto color_tmp = source_image_->get_data()->get_pixel(
-                            i,j);
-                        //color_tmp为源图像该点处的rgb值
-                        for (int k = 0; k < 4; k++)
+                        if (0 <= tar_x && tar_x < image_width_ && 0 <= tar_y &&
+                            tar_y < image_height_ &&
+                            mask->get_pixel(i, j)[0] != 0)
                         {
-                            int tar_tmp_x = tar_x+row_neighbor[k];
-                            int tar_tmp_y = tar_y+col_neighbor[k];
-                            int row_tmp = j + col_neighbor[k];
-                            int col_tmp = i + row_neighbor[k];
-                            int index_tmp =
-                                source_image_->get_index(row_tmp, col_tmp);
-                            if ((row_tmp < 0) || (col_tmp < 0) ||
-                                (row_tmp > height - 1) || (col_tmp > width - 1))
+                            int index_tmp = source_image_->get_index(j, i);
+                            double color_check[3];
+                            color_check[0] = f(index_tmp, 0);
+                            color_check[1] = f(index_tmp, 1);
+                            color_check[2] = f(index_tmp, 2);
+                            for (int i_ = 0; i_ < 3; i_++)
                             {
-                                continue;
-                            }//越界则跳过
-
-                            auto color = source_image_->get_data()->get_pixel(
-                                col_tmp, row_tmp);
-                            //color即为该邻点对应的rgb值
-
-                            b(index, 0) += (int)color_tmp[0] - (int)color[0];
-                            b(index, 1) += (int)color_tmp[1] - (int)color[1];
-                            b(index, 2) += (int)color_tmp[2] - (int)color[2];
-
-                            if (mask->get_pixel(col_tmp, row_tmp)[0] == 100)
-                                //即该点为边界项
-                            {
-                                auto color =
-                                    data_->get_pixel(tar_tmp_x, tar_tmp_y);
-                                b(index, 0) += (int)color[0];
-                                b(index, 1) += (int)color[1];
-                                b(index, 2) += (int)color[2];
-
+                                if (color_check[i_] < 0)
+                                    color_check[i_] = 0;
+                                if (color_check[i_] > 255)
+                                    color_check[i_] = 255;
                             }
-                            
-                                /*auto color = data_->get_pixel(tar_tmp_x,tar_tmp_y);
-                                b(index, 0) += (int)color[0];
-                                b(index, 1) += (int)color[1];
-                                b(index, 2) += (int)color[2];*/
-                            
-                        }
-
-                    }
-                }
-            }
-            Eigen::MatrixXd f = solver.solve(b);
-
-            for (int i = 0; i < mask->width(); ++i)
-            {
-                for (int j = 0; j < mask->height(); ++j)
-                {
-                    int tar_x =
-                        static_cast<int>(mouse_position_.x) + i -
-                        static_cast<int>(source_image_->get_position().x);
-                    int tar_y =
-                        static_cast<int>(mouse_position_.y) + j -
-                        static_cast<int>(source_image_->get_position().y);
-                    if (0 <= tar_x && tar_x < image_width_ && 0 <= tar_y &&
-                        tar_y < image_height_ && mask->get_pixel(i, j)[0] != 0)
-                    {
-                        int index_tmp = source_image_->get_index(j, i);
-                        double color_check[3];
-                        color_check[0] = f(index_tmp, 0);
-                        color_check[1] = f(index_tmp, 1);
-                        color_check[2] = f(index_tmp, 2);
-                        for (int i_ = 0; i_ < 3; i_++)
-                        {
-                            if (color_check[i_] < 0)
-                                color_check[i_] = 0;
-                            if (color_check[i_] > 255)
-                                color_check[i_] = 255;
-                        }
-                        unsigned char color[3];
-                        color[0] = color_check[0];
+                            unsigned char color[3];
+                            color[0] = color_check[0];
                             //;  >255?f(index_tmp,0):255;
-                        color[1] = color_check[1];  
-                        //> 255?  : 255;
-                        color[2] = color_check[2];  
-                        // > 255? f(index_tmp, 2): 255;
-                        
-                        data_->set_pixel(
-                            tar_x, tar_y, { color[0], color[1], color[2] });
+                            color[1] = color_check[1];
+                            //> 255?  : 255;
+                            color[2] = color_check[2];
+                            // > 255? f(index_tmp, 2): 255;
+
+                            data_->set_pixel(
+                                tar_x, tar_y, { color[0], color[1], color[2] });
+                        }
                     }
                 }
             }
-
-
-
 
             break;
         }
@@ -339,7 +327,7 @@ void CompTargetImage::preDecomposition()
     }
     Eigen::MatrixXd A_dense = Eigen::MatrixXd(A);
     solver.compute(A);
-
+    
 }
 
 }  // namespace USTC_CG
