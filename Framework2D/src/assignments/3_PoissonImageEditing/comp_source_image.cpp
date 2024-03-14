@@ -94,7 +94,7 @@ void CompSourceImage::select_region()
                     for (int i = static_cast<int>(start_.x);
                              i < static_cast<int>(end_.x);
                              ++i)
-                        {
+                     {
                             for (int j = static_cast<int>(start_.y);
                                  j < static_cast<int>(end_.y);
                                  ++j)
@@ -111,8 +111,8 @@ void CompSourceImage::select_region()
                                 Index_(j, i) = point_count;
                                 point_count++;
                             }
-                        }
-                    
+                     }
+                     need_preDecom = true;
 
                     break;
                 }

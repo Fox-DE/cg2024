@@ -39,6 +39,7 @@ class CompSourceImage : public ImageEditor
 
     int get_mask_width() const;
     int get_mask_height() const;
+    bool need_preDecom;
 
    private:
     RegionType region_type_ = kRect;
@@ -51,6 +52,7 @@ class CompSourceImage : public ImageEditor
     int mask_height;
     int point_count=0;
     Eigen::MatrixXi Index_ = Eigen::MatrixXi();    //index of the pixel
+    
 };
 
 }  // namespace USTC_CG

@@ -133,6 +133,8 @@ void CompTargetImage::clone()
                 // final RGB color by solving Poisson Equations.
              {   
                 restore();
+                if (source_image_->need_preDecom)
+                    preDecomposition();
                 int point_count = source_image_->get_point_count();
                 Eigen::MatrixXd b(point_count, 3);
                 
@@ -327,7 +329,7 @@ void CompTargetImage::preDecomposition()
     }
     Eigen::MatrixXd A_dense = Eigen::MatrixXd(A);
     solver.compute(A);
-    
+    source_image_->need_preDecom = false;
 }
 
 }  // namespace USTC_CG
