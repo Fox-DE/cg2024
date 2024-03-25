@@ -4,6 +4,7 @@
 #include "Nodes/node_register.h"
 #include "geom_node_base.h"
 #include "utils/util_openmesh_bind.h"
+#include "utils/algorithm.h"
 
 /*
 ** @brief HW5_ARAP_Parameterization
@@ -31,7 +32,7 @@ static void node_arap_declare(NodeDeclarationBuilder& b)
     // Input-1: Original 3D mesh with boundary
     // Maybe you need to add another input for initialization?
     b.add_input<decl::Geometry>("Input");
-
+    b.add_input<decl::Geometry>("OriginalMesh");
     /*
     ** NOTE: You can add more inputs or outputs if necessary. For example, in
     ** some cases, additional information (e.g. other mesh geometry, other 
@@ -55,10 +56,13 @@ static void node_arap_exec(ExeParams params)
 {
     // Get the input from params
     auto input = params.get_input<GOperandBase>("Input");
-
+    auto input2 = params.get_input<GOperandBase>("OriginalMesh");
     // Avoid processing the node when there is no input
     if (!input.get_component<MeshComponent>()) {
         throw std::runtime_error("Need Geometry Input.");
+    }
+    if (!input2.get_component<MeshComponent>()) {
+        throw std::runtime_error("Minimal Surface: Need Geometry Input.");
     }
     throw std::runtime_error("Not implemented");
 
@@ -69,6 +73,7 @@ static void node_arap_exec(ExeParams params)
     ** mesh elements.
     */
     auto halfedge_mesh = operand_to_openmesh(&input);
+    auto original_mesh = operand_to_openmesh(&input2);
 
    /* ------------- [HW5_TODO] ARAP Parameterization Implementation -----------
    ** Implement ARAP mesh parameterization to minimize local distortion.
