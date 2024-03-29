@@ -1,5 +1,5 @@
 #include "algorithm.h"
-#include <omp.h>
+
 using namespace Eigen;
 
 namespace USTC_CG {
@@ -123,7 +123,7 @@ void ARAP::build_A()
 void ARAP::import_u_data()
 {
     u = MatrixXd::Zero(nV, 2);
-#pragma omp parallel for
+
     for (const auto& vertex_handle:halfedge_mesh->vertices())
     {
         auto p = halfedge_mesh->point(vertex_handle);
@@ -134,7 +134,7 @@ void ARAP::import_u_data()
 }
 void ARAP::update_u_data()
 {
-#pragma omp parallel for
+
     for (const auto& vertex_handle : halfedge_mesh->vertices())
     {
         auto& po = halfedge_mesh->point(vertex_handle);
