@@ -22,7 +22,7 @@ void ARAP::compute()
         MatrixXd L(2 * nF + 1, 2);
         MatrixXd edge;
         MatrixXd L_t;
-        #pragma omp parallel for
+       
         for (int i = 0; i < nF; i++)
         {
             edge = edge_s.block(2 * i, 0, 2, 2);

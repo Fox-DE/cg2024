@@ -99,7 +99,7 @@ static void node_arap_exec(ExeParams params)
     */
     ARAP arap;
     arap.get_data(original_mesh, halfedge_mesh);
-    arap.set_itr(200);
+    arap.set_itr(100);
     arap.compute();
     halfedge_mesh = arap.output_mesh();
     
