@@ -36,6 +36,7 @@ static void node_arap_declare(NodeDeclarationBuilder& b)
     // Maybe you need to add another input for initialization?
     b.add_input<decl::Geometry>("Input");
     b.add_input<decl::Geometry>("OriginalMesh");
+    b.add_input<decl::Int>("Iteration Times").min(1).max(200).default_val(100);
     /*
     ** NOTE: You can add more inputs or outputs if necessary. For example, in
     ** some cases, additional information (e.g. other mesh geometry, other
@@ -61,6 +62,7 @@ static void node_arap_exec(ExeParams params)
     // Get the input from params
     auto input = params.get_input<GOperandBase>("Input");
     auto input2 = params.get_input<GOperandBase>("OriginalMesh");
+    auto itr = params.get_input<int>("Iteration Times");
     // Avoid processing the node when there is no input
     if (!input.get_component<MeshComponent>()) {
         throw std::runtime_error("Need Geometry Input.");
@@ -78,6 +80,7 @@ static void node_arap_exec(ExeParams params)
     */
     auto halfedge_mesh = operand_to_openmesh(&input);
     auto original_mesh = operand_to_openmesh(&input2);
+    
 
     /* ------------- [HW5_TODO] ARAP Parameterization Implementation -----------
     ** Implement ARAP mesh parameterization to minimize local distortion.
@@ -99,7 +102,7 @@ static void node_arap_exec(ExeParams params)
     */
     ARAP arap;
     arap.get_data(original_mesh, halfedge_mesh);
-    arap.set_itr(100);
+    arap.set_itr(itr);
     arap.compute();
     halfedge_mesh = arap.output_mesh();
     
