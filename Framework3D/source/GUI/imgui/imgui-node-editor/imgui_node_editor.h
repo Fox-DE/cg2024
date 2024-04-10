@@ -34,14 +34,14 @@
 
 USTC_CG_NAMESPACE_OPEN_SCOPE
 //------------------------------------------------------------------------------
+struct NodeId;
+struct LinkId;
+struct SocketID;
+//------------------------------------------------------------------------------
 namespace ax
 {
     namespace NodeEditor
     {
-        //------------------------------------------------------------------------------
-        struct USTC_CG::NodeId;
-        struct USTC_CG::LinkId;
-        struct USTC_CG::SocketID;
 
 
         //------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ namespace ax
             AddNode = 0x00000010,
             RemoveNode = 0x00000020,
             AddLink = 0x00000040,
-            RemoveLInk = 0x00000080,
+            RemoveLink = 0x00000080,
             User = 0x00000100,
         };
 
