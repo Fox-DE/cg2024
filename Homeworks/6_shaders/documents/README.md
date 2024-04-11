@@ -4,21 +4,23 @@
 
 GPGPU被广泛使用在各种任务中，是目前火热的人工智能领域最重要的硬件资源。在本次作业中，我么会利用GPU最开始设计出来的目的——图形计算。
 
+遇到问题可以查看[Q&A](./QA.md)。
+
 ## 本次作业
 
 我们需要完成：
 
 ### Blinn Phong着色模型
 1. 首先连接节点Rasterize的输出，观察不同连接的结果。
-2. 在Lighting节点中，按注释完成 blinn_phong.fs
-3. 在rasterize.fs中，读取法线贴图并且完成法线贴图映射。（本步骤可以后执行）
+2. 在Lighting节点中，按注释完成 blinn_phong.fs. 此shader需要在节点图中添加Deferred shading节点来进行调用。
+3. 在rasterize.fs中，读取法线贴图并且完成法线贴图映射。（本步骤可以后执行）[法线贴图资料](https://learnopengl-cn.github.io/05%20Advanced%20Lighting/04%20Normal%20Mapping/)。
 
 ### Shadow Mapping
 1. 创建Shadow Mapping节点
-2. 修改或是拷贝一份 rasterize_impl.fs，在其中完成Shadow Mapping。这里你需要在C++文件中填写更多信息，需要对光源出发的矩阵进行填写（与计算shadow mapping时使用的一致即可）
+2. 修改或是拷贝一份 blinn_phong.fs，在其中完成Shadow Mapping。这里你需要在C++文件中填写更多信息，需要对光源出发的矩阵进行填写（与计算shadow mapping时使用的一致即可）
 
 ### PCSS (Optional)
-1. 修改或拷贝一份blinn-phong.fs，按注释和参考资料完成PCSS。
+1. 修改或拷贝一份blinn_phong.fs，按注释和参考资料完成PCSS。
 ### SSAO (Optional)
 1. 创建SSAO节点，读取深度和光照的结果
 
