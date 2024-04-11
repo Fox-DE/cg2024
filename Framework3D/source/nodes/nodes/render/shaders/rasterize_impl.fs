@@ -50,6 +50,6 @@ void main() {
 
     normalmap_value=normalmap_value*2.0-1.0;
     mat3 TBN=mat3(tangent,bitangent,normal);
-    vec3 worldNormal=normalize(TBN*normalmap_value);
-    normal=worldNormal;
+    normal=normalize(TBN*normalmap_value);
+   
 }

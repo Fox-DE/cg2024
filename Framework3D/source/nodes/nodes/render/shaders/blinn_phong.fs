@@ -45,23 +45,6 @@ float roughness = metalnessRoughness.y;
 
 vec3 textureColor=texture2D(diffuseColorSampler,uv).xyz;
 
-//debug
-//mat4 projection=lights[0].light_projection;
-//mat4 view=lights[0].light_view;
-//vec4 clipPos =  projection*view*(vec4(pos, 1.0));
-//vec3 clipT=vec3(clipPos.xyz);
-//float dk=clipPos[2]/clipPos[3];
-//float radius=lights[0].radius;
-//float depth_tmp=(clipPos.z / clipPos.w);
-//float x_tmp=(clipPos.x/clipPos.w*0.5)+0.5;
-//float y_tmp=(clipPos.y/clipPos.w*0.5)+0.5;
-//float closestDepth = texture(shadow_maps, vec3(x_tmp,y_tmp, lights[0].shadow_map_id)).x;
-//float bias=0.005;
-//float isS=depth_tmp-bias>closestDepth?0.0:1.0;
-
-//Color=vec4(isS,0.f,0.f,1.0);
-//debug
-
 for(int i = 0; i < light_count; i ++) {
 
 float shadow_map = texture(shadow_maps, vec3(uv, lights[i].shadow_map_id)).x;
