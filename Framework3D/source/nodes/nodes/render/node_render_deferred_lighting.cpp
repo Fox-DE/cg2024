@@ -7,6 +7,7 @@
 #include "Nodes/socket_types/basic_socket_types.hpp"
 #include "camera.h"
 #include "light.h"
+#include "pxr/base/gf/frustum.h"
 #include "pxr/imaging/glf/simpleLight.h"
 #include "pxr/imaging/hd/tokens.h"
 #include "render_node_base.h"
@@ -130,12 +131,23 @@ static void node_exec(ExeParams params)
             GlfSimpleLight light_params = lights[i]->Get(HdTokens->params).Get<GlfSimpleLight>();
             auto diffuse4 = light_params.GetDiffuse();
             pxr::GfVec3f diffuse3(diffuse4[0], diffuse4[1], diffuse4[2]);
+            
             auto position4 = light_params.GetPosition();
             pxr::GfVec3f position3(position4[0], position4[1], position4[2]);
+            //set diffuse and position
+            GfVec3f light_position = { position4[0], position4[1], position4[2] };
+            GfMatrix4f light_view_mat;
+            GfMatrix4f light_projection_mat;
+            GfFrustum frustum;
+            light_view_mat =
+                GfMatrix4f().SetLookAt(light_position, GfVec3f(0, 0, 0), GfVec3f(0, 0, 1));
+            frustum.SetPerspective(120.f, 1.0, 1, 25.f);
+            light_projection_mat = GfMatrix4f(frustum.ComputeProjectionMatrix());
 
             auto radius = lights[i]->Get(HdLightTokens->radius).Get<float>();
             
-            light_vector.emplace_back(GfMatrix4f(), GfMatrix4f(), position3, 0.f, diffuse3, i);
+            light_vector.emplace_back(
+                GfMatrix4f(light_projection_mat), light_view_mat, position3, radius, diffuse3, i);
 
             // You can add directional light here, and also the corresponding shadow map calculation
             // part.

@@ -44,47 +44,35 @@ float metal = metalnessRoughness.x;
 float roughness = metalnessRoughness.y;
 
 vec3 textureColor=texture2D(diffuseColorSampler,uv).xyz;
-//Color=vec4(textureColor,1.0);
-//color=vec3(texture2D(diffuseColorSampler,uv).xyz);
-//Color=vec4(texture2D(diffuseColorSampler,uv).xyz,1);
-//color=texture2D(diffuseColorSampler,uv).xyz;
-//Color=vec4(abs(texture2D(normalMapSampler,uv).xyz),1.0);
-//Color=vec4(color,1.0);
-
-//Color=vec4(ambient,1.0);
-//Color=vec4((texture2D(metallicRoughnessSampler,uv).xyz),1.0);
-//Color=vec4((texture2D(position,uv).xyz),1.0);
-
-//vec3 ambient=Light.color*0.2;
-//Color=vec4(ambient,1.0);
 
 //debug
-mat4 projection=lights[0].light_projection;
-mat4 view=lights[0].light_view;
-vec4 clipPos =  projection*(vec4(pos, 1.0));
-vec3 clipT=vec3(clipPos.xyz);
+//mat4 projection=lights[0].light_projection;
+//mat4 view=lights[0].light_view;
+//vec4 clipPos =  projection*view*(vec4(pos, 1.0));
+//vec3 clipT=vec3(clipPos.xyz);
 //float dk=clipPos[2]/clipPos[3];
-Color=vec4(clipT,1.0);
+//float radius=lights[0].radius;
+//float depth_tmp=(clipPos.z / clipPos.w);
+//float x_tmp=(clipPos.x/clipPos.w*0.5)+0.5;
+//float y_tmp=(clipPos.y/clipPos.w*0.5)+0.5;
+//float closestDepth = texture(shadow_maps, vec3(x_tmp,y_tmp, lights[0].shadow_map_id)).x;
+//float bias=0.005;
+//float isS=depth_tmp-bias>closestDepth?0.0:1.0;
+
+//Color=vec4(isS,0.f,0.f,1.0);
 //debug
+
 for(int i = 0; i < light_count; i ++) {
 
-float shadow_map_value = texture(shadow_maps, vec3(uv, lights[i].shadow_map_id)).x;
-
-float isShadowed=1.0;
-vec4 clipPos = lights[i].light_projection * lights[i].light_view * vec4(pos, 1.0);
-float depth=(clipPos.z / clipPos.w);
-if(depth>shadow_map_value)
-{
-    isShadowed=0.0;
-}
-
+float shadow_map = texture(shadow_maps, vec3(uv, lights[i].shadow_map_id)).x;
+//ambient light
 float ka=0.6;
 vec3 ambient=ka*lights[i].color;
-
+//lambertian
 vec3 norm=normalize(texture2D(normalMapSampler,uv).xyz);
 vec3 lightDir=normalize(lights[i].position-pos);
 
-float kd=0.8*(roughness*2+0.5);
+float kd=0.8*(roughness*0.5+0.5);
 float diff=max(dot(norm,lightDir),0.0);
 vec3 diffuse=lights[i].color*(diff*kd);
 
@@ -93,12 +81,30 @@ vec3 viewDir=normalize(camPos-pos);
 vec3 reflectDir=reflect(-lightDir,norm);
 vec3 h=normalize(viewDir+lightDir);
 
-float spec=pow(max(dot(h,norm),0.0),(roughness*20+10));
+float spec=pow(max(dot(h,norm),0.0),(metal*20+10));
 vec3 specular =ks*lights[i].color*(spec);
 
-vec3 result=specular+diffuse+ambient;
-//Color+=vec4(result*textureColor,1.0);
+//Shadow 
+mat4 projection=lights[i].light_projection;
+mat4 view=lights[i].light_view;
+vec4 clipPos =  projection*view*(vec4(pos, 1.0));
+//vec3 clipT=vec3(clipPos.xyz);
+//float dk=clipPos[2]/clipPos[3];
+//float radius=lights[0].radius;
+float depth_tmp=(clipPos.z / clipPos.w);
+float x_tmp=(clipPos.x/clipPos.w*0.5)+0.5;
+float y_tmp=(clipPos.y/clipPos.w*0.5)+0.5;
+float closestDepth = texture(shadow_maps, vec3(x_tmp,y_tmp, lights[i].shadow_map_id)).x;
 
+float bias=0.005;
+//float bias=max(0.05*(1.0-dot(normal,lightDir)),0.005);
+float isS=depth_tmp-bias>closestDepth?0.0:1.0;
+if(x_tmp>1.0||y_tmp>1.0||x_tmp<0||y_tmp<0)
+    isS=0.0;
+vec3 result=isS*(specular+diffuse)+ambient;
+//Color=vec4(isS,0.f,0.f,1.0);
+Color+=vec4(result*textureColor,1.0);
+//Color=vec4(shadow_map,0.0,0.0,1.0);
 
 
 //Color=vec4(depth,0,0,1.0);
