@@ -47,4 +47,9 @@ void main() {
 
     tangent = normalize(tangent - dot(tangent, normal) * normal);
     bitangent = normalize(bitangent - dot(bitangent, normal) * normal);
+
+    normalmap_value=normalmap_value*2.0-1.0;
+    mat3 TBN=mat3(tangent,bitangent,normal);
+    vec3 worldNormal=normalize(TBN*normalmap_value);
+    normal=worldNormal;
 }
