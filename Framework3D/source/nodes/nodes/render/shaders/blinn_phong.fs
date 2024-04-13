@@ -82,27 +82,52 @@ float bias=0.005;
 float isS=depth_tmp-bias>closestDepth?0.0:1.0;
 if(x_tmp>1.0||y_tmp>1.0||x_tmp<0||y_tmp<0)
     isS=0.0;
-//Color=vec4(isS,0.f,0.f,1.0);
-//Color+=vec4(result*textureColor,1.0);
-//Color=vec4(shadow_map,0.0,0.0,1.0);
-//Color+=vec4(vec3(isS),1.0);
 
 
 
 
-//PCF
+
+// PCF/PCSS
 float shadow=0.0;
 //float texelSize = (1.0/1024);
 vec2 texelSize=  1.0/textureSize(shadow_maps,0).xy;
+int filterX=2;
+
+
+//PCSS part
+if(depth_tmp - bias > closestDepth)
+{
+float d_bl=0.0;
+float count_b=0.0;
 for(int x = -1; x <= 1; ++x)
 {
     for(int y = -1; y <= 1; ++y)
     {
         float pcfDepth = texture(shadow_maps, vec3(x_tmp+x*texelSize.x,y_tmp+y*texelSize.y, lights[i].shadow_map_id)).x;
+        if(depth_tmp - bias > pcfDepth)
+        {
+            count_b+=1;
+            d_bl+=pcfDepth;
+        }
+    }   
+}
+d_bl=d_bl/count_b;
+filterX=int(25.0*d_bl/depth_tmp);
+filterX=min(filterX,25);
+filterX=max(filterX,0);
+}
+//PCSS part
+
+for(int x = -filterX; x <= filterX; ++x)
+{
+    for(int y = -filterX; y <= filterX; ++y)
+    {
+        float pcfDepth = texture(shadow_maps, vec3(x_tmp+x*texelSize.x,y_tmp+y*texelSize.y, lights[i].shadow_map_id)).x;
         shadow += depth_tmp - bias > pcfDepth ? 0.0 : 1.0;        
     }    
 }
-shadow = shadow/9.0;
+float count=2*filterX+1;
+shadow = shadow/(count*count);
 if(x_tmp>1.0||y_tmp>1.0||x_tmp<0||y_tmp<0)
     shadow=0.0;
 //Color=vec4(vec3(shadow),1.0);
@@ -110,8 +135,6 @@ if(x_tmp>1.0||y_tmp>1.0||x_tmp<0||y_tmp<0)
 //isS means normal shadow,shadow means PCF shadow
 vec3 result=shadow*(specular+diffuse)+ambient;
 Color+=vec4(result*textureColor,1.0);
-
-//PCSS
 
 
 
