@@ -55,40 +55,66 @@ vec3 ambient=ka*lights[i].color;
 vec3 norm=normalize(texture2D(normalMapSampler,uv).xyz);
 vec3 lightDir=normalize(lights[i].position-pos);
 
-float kd=0.8*(roughness*0.5+0.5);
+float ks=metal*0.8;
+float kd=1.0-ks;
 float diff=max(dot(norm,lightDir),0.0);
 vec3 diffuse=lights[i].color*(diff*kd);
 
-float ks=0.8;
+
 vec3 viewDir=normalize(camPos-pos);
 vec3 reflectDir=reflect(-lightDir,norm);
 vec3 h=normalize(viewDir+lightDir);
 
-float spec=pow(max(dot(h,norm),0.0),((metal+roughness)*20+10));
+float spec=pow(max(dot(h,norm),0.0),((1-roughness)*20));
 vec3 specular =ks*lights[i].color*(spec);
 
 //Shadow 
 mat4 projection=lights[i].light_projection;
 mat4 view=lights[i].light_view;
 vec4 clipPos =  projection*view*(vec4(pos, 1.0));
-//vec3 clipT=vec3(clipPos.xyz);
-//float dk=clipPos[2]/clipPos[3];
-//float radius=lights[0].radius;
 float depth_tmp=(clipPos.z / clipPos.w);
 float x_tmp=(clipPos.x/clipPos.w*0.5)+0.5;
 float y_tmp=(clipPos.y/clipPos.w*0.5)+0.5;
 float closestDepth = texture(shadow_maps, vec3(x_tmp,y_tmp, lights[i].shadow_map_id)).x;
 
 float bias=0.005;
-//float bias=max(0.05*(1.0-dot(normal,lightDir)),0.005);
+//float bias=max(0.005*(1.0-dot(lightDir,normal)),0.001);
 float isS=depth_tmp-bias>closestDepth?0.0:1.0;
 if(x_tmp>1.0||y_tmp>1.0||x_tmp<0||y_tmp<0)
     isS=0.0;
-vec3 result=isS*(specular+diffuse)+ambient;
 //Color=vec4(isS,0.f,0.f,1.0);
-Color+=vec4(result*textureColor,1.0);
+//Color+=vec4(result*textureColor,1.0);
 //Color=vec4(shadow_map,0.0,0.0,1.0);
 //Color+=vec4(vec3(isS),1.0);
+
+
+
+
+//PCF
+float shadow=0.0;
+//float texelSize = (1.0/1024);
+vec2 texelSize=  1.0/textureSize(shadow_maps,0).xy;
+for(int x = -1; x <= 1; ++x)
+{
+    for(int y = -1; y <= 1; ++y)
+    {
+        float pcfDepth = texture(shadow_maps, vec3(x_tmp+x*texelSize.x,y_tmp+y*texelSize.y, lights[i].shadow_map_id)).x;
+        shadow += depth_tmp - bias > pcfDepth ? 0.0 : 1.0;        
+    }    
+}
+shadow = shadow/9.0;
+if(x_tmp>1.0||y_tmp>1.0||x_tmp<0||y_tmp<0)
+    shadow=0.0;
+//Color=vec4(vec3(shadow),1.0);
+//Color+=vec4(vec3(isS),1.0);
+//isS means normal shadow,shadow means PCF shadow
+vec3 result=shadow*(specular+diffuse)+ambient;
+Color+=vec4(result*textureColor,1.0);
+
+//PCSS
+
+
+
 
 //Color=vec4(depth,0,0,1.0);
 //Color=lights[i].light_projection*vec4(1.0,1.0,1.0,1.0);
