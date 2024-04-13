@@ -51,7 +51,7 @@ float shadow_map = texture(shadow_maps, vec3(uv, lights[i].shadow_map_id)).x;
 //ambient light
 float ka=0.6;
 vec3 ambient=ka*lights[i].color;
-//lambertian
+//diffuse
 vec3 norm=normalize(texture2D(normalMapSampler,uv).xyz);
 vec3 lightDir=normalize(lights[i].position-pos);
 
@@ -64,7 +64,7 @@ vec3 viewDir=normalize(camPos-pos);
 vec3 reflectDir=reflect(-lightDir,norm);
 vec3 h=normalize(viewDir+lightDir);
 
-float spec=pow(max(dot(h,norm),0.0),(metal*20+10));
+float spec=pow(max(dot(h,norm),0.0),((metal+roughness)*20+10));
 vec3 specular =ks*lights[i].color*(spec);
 
 //Shadow 
@@ -88,7 +88,7 @@ vec3 result=isS*(specular+diffuse)+ambient;
 //Color=vec4(isS,0.f,0.f,1.0);
 Color+=vec4(result*textureColor,1.0);
 //Color=vec4(shadow_map,0.0,0.0,1.0);
-
+//Color+=vec4(vec3(isS),1.0);
 
 //Color=vec4(depth,0,0,1.0);
 //Color=lights[i].light_projection*vec4(1.0,1.0,1.0,1.0);
