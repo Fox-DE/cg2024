@@ -251,12 +251,53 @@ Color Hd_USTC_CG_Rect_Light::Sample(
     float& sample_light_pdf,
     const std::function<float()>& uniform_float)
 {
-    return {};
+    float u1 = uniform_float();
+    float u2 = uniform_float();
+    GfVec3f e1 = corner1 - corner0;
+    GfVec3f e2 = corner2 - corner0;
+    GfVec3f sampledPosOnSurface = corner0 + u1 * e1 + u2 * e2;
+    sampled_light_pos = sampledPosOnSurface;
+    GfVec3f lightVec = sampledPosOnSurface - pos;
+    dir = lightVec.GetNormalized();
+    auto normal = GfCross(e1, e2).GetNormalized();
+    float cosVal = (GfDot(-dir, normal));
+    float distance = (corner0 + 0.5 * e1 + 0.5 * e2 - pos).GetLength();
+    float area = width * height;
+    sample_light_pdf = distance * distance / (area * cosVal);
+    if (cosVal < 0)
+    {
+        return Color{ 0 };
+    }
+    //set one face lighting
+
+    
+    
+    return irradiance * cosVal / M_PI;
 }
 
 Color Hd_USTC_CG_Rect_Light::Intersect(const GfRay& ray, float& depth)
 {
-    return {};
+    auto pos = ray.GetStartPoint();
+    auto dir = ray.GetDirection();
+    GfVec3f e1 = corner1 - corner0;
+    GfVec3f e2 = corner2 - corner0;
+    GfVec3f normal = GfCross(e1, e2).GetNormalized();
+    float t = GfDot(corner0 - pos, normal) / GfDot(dir, normal);
+     if (t < 0) {
+        depth = std::numeric_limits<float>::infinity();
+        return { 0, 0, 0 };
+    }
+    GfVec3d p = pos + t * dir;
+    GfVec3d d = p - corner0;
+    float u1 = GfDot(d, e1);
+    float u2 = GfDot(d, e2);
+    if (u1 < 0 || u1 > height || u2 < 0 || u2 > width)
+    {
+        depth = std::numeric_limits<float>::infinity();
+        return { 0, 0, 0 };
+    }
+    depth = t;
+    return irradiance/M_PI;
 }
 
 void Hd_USTC_CG_Rect_Light::Sync(
@@ -279,7 +320,7 @@ void Hd_USTC_CG_Rect_Light::Sync(
 
     auto diffuse = sceneDelegate->GetLightParamValue(id, HdLightTokens->diffuse).Get<float>();
     power = sceneDelegate->GetLightParamValue(id, HdLightTokens->color).Get<GfVec3f>() * diffuse;
-
+    irradiance = power/width/height;
     // HW7_TODO: calculate irradiance
 }
 
