@@ -26,11 +26,11 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     if (recursion_depth >= 50) {
         return {};
     }
-    /* float RR = uniform_float();
+    float RR = uniform_float();
     if (recursion_depth > 1 && RR > 0.6)
     {
         return {};
-    }*/
+    }
     //Russian Roullete
     SurfaceInteraction si;
     if (!Intersect(ray, si)) {
@@ -57,9 +57,8 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     // HW7_TODO: Estimate global lighting here.
     GfVec3f globalLight = {0,0,0};
     
-    GfRay Ray_next;
-    auto normal = si.shadingNormal;
-
+    GfRay Ray_reflected;
+    auto normal = si.geometricNormal;
     //pick a random dir
     auto basis = constructONB(normal);
     GfVec3f dir_next;
@@ -75,14 +74,11 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     worldSampledDir = worldSampledDir.GetNormalized();
     
     //BRDF
-    auto eval = si.Eval(-worldSampledDir);
-    Ray_next.SetPointAndDirection(si.position + 0.000001 * normal, worldSampledDir);
-    auto cosVal = GfDot(worldSampledDir, normal);
-    
-    globalLight = cosVal*EstimateOutGoingRadiance(Ray_next, uniform_float, recursion_depth + 1)/pdf;
-    globalLight[0] = globalLight[0] * eval[0];
-    globalLight[1] = globalLight[1] * eval[1];
-    globalLight[2] = globalLight[2] * eval[2];
+    Ray_reflected.SetPointAndDirection(si.position + 0.000001 * normal, worldSampledDir);
+    globalLight = GfCompMult(globalLight, si.Eval(-worldSampledDir));
+    globalLight = GfDot(worldSampledDir, normal)*
+                  EstimateOutGoingRadiance(Ray_reflected, uniform_float, recursion_depth + 1) / pdf;
+ 
 
     color = directLight + globalLight;
 

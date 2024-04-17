@@ -251,11 +251,11 @@ Color Hd_USTC_CG_Rect_Light::Sample(
     float& sample_light_pdf,
     const std::function<float()>& uniform_float)
 {
-    float u1 = uniform_float();
-    float u2 = uniform_float();
+    float u = uniform_float();
+    float v = uniform_float();
     GfVec3f e1 = corner1 - corner0;
     GfVec3f e2 = corner2 - corner0;
-    GfVec3f sampledPosOnSurface = corner0 + u1 * e1 + u2 * e2;
+    GfVec3f sampledPosOnSurface = corner0 + u * e1 + v * e2;
     sampled_light_pos = sampledPosOnSurface;
     GfVec3f lightVec = sampledPosOnSurface - pos;
     dir = lightVec.GetNormalized();
@@ -277,21 +277,21 @@ Color Hd_USTC_CG_Rect_Light::Sample(
 
 Color Hd_USTC_CG_Rect_Light::Intersect(const GfRay& ray, float& depth)
 {
-    auto pos = ray.GetStartPoint();
-    auto dir = ray.GetDirection();
+    auto ray_pos = ray.GetStartPoint();
+    auto ray_dir = ray.GetDirection();
     GfVec3f e1 = corner1 - corner0;
     GfVec3f e2 = corner2 - corner0;
     GfVec3f normal = GfCross(e1, e2).GetNormalized();
-    float t = GfDot(corner0 - pos, normal) / GfDot(dir, normal);
-     if (t < 0) {
+    float t = GfDot(corner0 - ray_pos, normal) / GfDot(ray_dir, normal);
+    if (t < 0) {
         depth = std::numeric_limits<float>::infinity();
         return { 0, 0, 0 };
     }
-    GfVec3d p = pos + t * dir;
-    GfVec3d d = p - corner0;
-    float u1 = GfDot(d, e1);
-    float u2 = GfDot(d, e2);
-    if (u1 < 0 || u1 > height || u2 < 0 || u2 > width)
+    GfVec3d pos_intersect = ray_pos + t * ray_dir;
+    GfVec3d d = pos_intersect - corner0;
+    float u = GfDot(d, e2);
+    float v = GfDot(d, e1);
+    if (v < 0 || v > height || u < 0 || u > width)
     {
         depth = std::numeric_limits<float>::infinity();
         return { 0, 0, 0 };
