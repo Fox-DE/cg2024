@@ -26,11 +26,11 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     if (recursion_depth >= 50) {
         return {};
     }
-    /* float RR = uniform_float();
+     float RR = uniform_float();
     if (recursion_depth > 1 && RR > 0.6)
     {
         return {};
-    }*/
+    }
     //Russian Roullete
     SurfaceInteraction si;
     if (!Intersect(ray, si)) {
@@ -80,9 +80,7 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     auto cosVal = GfDot(worldSampledDir, normal);
     
     globalLight = cosVal*EstimateOutGoingRadiance(Ray_next, uniform_float, recursion_depth + 1)/pdf;
-    globalLight[0] = globalLight[0] * eval[0];
-    globalLight[1] = globalLight[1] * eval[1];
-    globalLight[2] = globalLight[2] * eval[2];
+    globalLight = GfCompMult(globalLight, eval);
 
     color = directLight + globalLight;
 
