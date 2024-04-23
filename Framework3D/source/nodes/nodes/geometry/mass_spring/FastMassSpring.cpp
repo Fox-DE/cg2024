@@ -27,4 +27,3 @@ void FastMassSpring::step()
 }
 
 }  // namespace USTC_CG::node_mass_spring
-}  // namespace USTC_CG::node_mass_spring
