@@ -4,9 +4,15 @@ libs/
 .vscode
 imgui.ini
 <<<<<<< HEAD
+<<<<<<< HEAD
 Framework2D/.vs/
 .vs/
 Binaries/
 =======
 .DS_Store
 >>>>>>> 4f33c918922f80756a6f75abb2a40fc978b8ddc2
+=======
+.DS_Store
+.vs
+*.zip
+>>>>>>> 65347343637f5bd3d608dba98da6bb4c64cbba34

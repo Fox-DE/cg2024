@@ -55,6 +55,7 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     GfVec3f directLight = EstimateDirectLight(si, uniform_float);
 
     // HW7_TODO: Estimate global lighting here.
+<<<<<<< HEAD
     GfVec3f globalLight = {0,0,0};
     
     GfRay Ray_next;
@@ -81,6 +82,9 @@ GfVec3f PathIntegrator::EstimateOutGoingRadiance(
     
     globalLight = cosVal*EstimateOutGoingRadiance(Ray_next, uniform_float, recursion_depth + 1)/pdf;
     globalLight = GfCompMult(globalLight, eval);
+=======
+    GfVec3f globalLight = GfVec3f{0.f};
+>>>>>>> 65347343637f5bd3d608dba98da6bb4c64cbba34
 
     color = directLight + globalLight;
 

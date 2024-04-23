@@ -47,8 +47,8 @@ const TfTokenVector Hd_USTC_CG_RenderDelegate::SUPPORTED_RPRIM_TYPES = {
 };
 
 const TfTokenVector Hd_USTC_CG_RenderDelegate::SUPPORTED_SPRIM_TYPES = {
-    HdPrimTypeTokens->camera,    HdPrimTypeTokens->sphereLight, HdPrimTypeTokens->rectLight,
-    HdPrimTypeTokens->domeLight, HdPrimTypeTokens->material,
+    HdPrimTypeTokens->camera,       HdPrimTypeTokens->sphereLight, HdPrimTypeTokens->rectLight,
+    HdPrimTypeTokens->distantLight, HdPrimTypeTokens->domeLight,   HdPrimTypeTokens->material,
 
 };
 
@@ -103,6 +103,7 @@ void Hd_USTC_CG_RenderDelegate::_Initialize()
     _PopulateDefaultSettings(_settingDescriptors);
 
     _renderParam = std::make_shared<Hd_USTC_CG_RenderParam>(&_renderThread, &_sceneVersion);
+    lights.reserve(16);
     _renderParam->lights = &lights;
     _renderParam->materials = &materials;
 
@@ -236,6 +237,12 @@ HdSprim* Hd_USTC_CG_RenderDelegate::CreateSprim(const TfToken& typeId, const Sdf
         lights.push_back(light);
         return light;
     }
+
+    else if (typeId == HdPrimTypeTokens->distantLight) {
+        auto light = new Hd_USTC_CG_Distant_Light(sprimId, typeId);
+        lights.push_back(light);
+        return light;
+    }
     else {
         TF_CODING_ERROR("Unknown Sprim Type %s", typeId.GetText());
     }
@@ -267,6 +274,9 @@ HdSprim* Hd_USTC_CG_RenderDelegate::CreateFallbackSprim(const TfToken& typeId)
     }
     else if (typeId == HdPrimTypeTokens->domeLight) {
         return new Hd_USTC_CG_Dome_Light(SdfPath::EmptyPath(), typeId);
+    }
+    else if (typeId == HdPrimTypeTokens->distantLight) {
+        return new Hd_USTC_CG_Distant_Light(SdfPath::EmptyPath(), typeId);
     }
     else {
         TF_CODING_ERROR("Unknown Sprim Type %s", typeId.GetText());

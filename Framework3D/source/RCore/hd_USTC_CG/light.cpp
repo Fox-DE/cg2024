@@ -3,12 +3,14 @@
 #include "Utils/Logging/Logging.h"
 #include "pxr/base/gf/plane.h"
 #include "pxr/base/gf/ray.h"
+#include "pxr/base/gf/rotation.h"
 #include "pxr/base/gf/vec2f.h"
 #include "pxr/imaging/glf/simpleLight.h"
 #include "pxr/imaging/hd/changeTracker.h"
 #include "pxr/imaging/hd/rprimCollection.h"
 #include "pxr/imaging/hd/sceneDelegate.h"
 #include "pxr/imaging/hio/image.h"
+#include "renderParam.h"
 #include "texture.h"
 #include "utils/math.hpp"
 #include "utils/sampling.hpp"
@@ -20,6 +22,8 @@ void Hd_USTC_CG_Light::Sync(
     HdRenderParam* renderParam,
     HdDirtyBits* dirtyBits)
 {
+    static_cast<Hd_USTC_CG_RenderParam*>(renderParam)->AcquireSceneForEdit();
+
     TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
 
@@ -85,6 +89,13 @@ bool Hd_USTC_CG_Light::IsDomeLight()
     return _lightType == HdPrimTypeTokens->domeLight;
 }
 
+void Hd_USTC_CG_Light::Finalize(HdRenderParam* renderParam)
+{
+    static_cast<Hd_USTC_CG_RenderParam*>(renderParam)->AcquireSceneForEdit();
+
+    HdLight::Finalize(renderParam);
+}
+
 VtValue Hd_USTC_CG_Light::Get(const TfToken& token) const
 {
     VtValue val;
@@ -122,13 +133,13 @@ Color Hd_USTC_CG_Sphere_Light::Sample(
     // and the pdf (with the measure of solid angle):
     float cosVal = GfDot(-dir, worldSampledDir.GetNormalized());
 
-    sample_light_pdf = sample_pos_pdf / radius / radius * cosVal * distance * distance;
+    sample_light_pdf = sample_pos_pdf / radius / radius / cosVal * distance * distance;
 
     // Finally we calculate the radiance
     if (cosVal < 0) {
         return Color{ 0 };
     }
-    return irradiance * cosVal / M_PI;
+    return irradiance / M_PI;
 }
 
 Color Hd_USTC_CG_Sphere_Light::Intersect(const GfRay& ray, float& depth)
@@ -156,8 +167,11 @@ void Hd_USTC_CG_Sphere_Light::Sync(
     radius = sceneDelegate->GetLightParamValue(id, HdLightTokens->radius).Get<float>();
 
     auto diffuse = sceneDelegate->GetLightParamValue(id, HdLightTokens->diffuse).Get<float>();
-    power = sceneDelegate->GetLightParamValue(id, HdLightTokens->color).Get<GfVec3f>() * diffuse;
 
+    auto intensity =
+        sceneDelegate->GetLightParamValue(id, HdLightTokens->intensity).GetWithDefault<float>();
+    power = sceneDelegate->GetLightParamValue(id, HdLightTokens->color).Get<GfVec3f>() * diffuse * intensity;
+     
     auto transform = Get(HdTokens->transform).GetWithDefault<GfMatrix4d>();
 
     GfVec3d p = transform.ExtractTranslation();
@@ -183,9 +197,8 @@ Color Hd_USTC_CG_Dome_Light::Sample(
 
 Color Hd_USTC_CG_Dome_Light::Intersect(const GfRay& ray, float& depth)
 {
-    depth = std::numeric_limits<float>::max() / 100.f;  // max is smaller than infinity, lol
-
-    return Le(GfVec3f(ray.GetDirection()));
+    depth = 10000000.f;
+    return Le(GfVec3f(ray.GetDirection()).GetNormalized());
 }
 
 void Hd_USTC_CG_Dome_Light::_PrepareDomeLight(SdfPath const& id, HdSceneDelegate* sceneDelegate)
@@ -243,6 +256,57 @@ void Hd_USTC_CG_Dome_Light::Finalize(HdRenderParam* renderParam)
 }
 
 // HW7_TODO: write the following, you should refer to the sphere light.
+
+void Hd_USTC_CG_Distant_Light::Sync(
+    HdSceneDelegate* sceneDelegate,
+    HdRenderParam* renderParam,
+    HdDirtyBits* dirtyBits)
+{
+    Hd_USTC_CG_Light::Sync(sceneDelegate, renderParam, dirtyBits);
+    auto id = GetId();
+    angle = sceneDelegate->GetLightParamValue(id, HdLightTokens->angle).Get<float>();
+    angle = std::clamp(angle, 0.03f, 89.9f) * M_PI / 180.0f;
+
+    auto diffuse = sceneDelegate->GetLightParamValue(id, HdLightTokens->diffuse).Get<float>();
+    radiance = sceneDelegate->GetLightParamValue(id, HdLightTokens->color).Get<GfVec3f>() *
+               diffuse / (1 - cos(angle)) / 2.0 / M_PI;
+
+    auto transform = Get(HdTokens->transform).GetWithDefault<GfMatrix4d>();
+
+    direction = transform.TransformDir(GfVec3f(0, 0, -1)).GetNormalized();
+}
+
+Color Hd_USTC_CG_Distant_Light::Sample(
+    const GfVec3f& pos,
+    GfVec3f& dir,
+    GfVec3f& sampled_light_pos,
+    float& sample_light_pdf,
+    const std::function<float()>& uniform_float)
+{
+    float theta = uniform_float() * angle;
+    float phi = uniform_float() * 2 * M_PI;
+
+    auto sampled_dir = GfVec3f(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+
+    auto basis = constructONB(-direction);
+
+    dir = basis * sampled_dir;
+    sampled_light_pos = pos + dir * 10000000.f;
+
+    sample_light_pdf = 1.0f / sin(theta) / (2.0f * M_PI * angle);
+
+    return radiance;
+}
+
+Color Hd_USTC_CG_Distant_Light::Intersect(const GfRay& ray, float& depth)
+{
+    depth = 10000000.f;
+
+    if (GfDot(ray.GetDirection().GetNormalized(), -direction) > cos(angle)) {
+        return radiance;
+    }
+    return Color(0);
+}
 
 Color Hd_USTC_CG_Rect_Light::Sample(
     const GfVec3f& pos,
