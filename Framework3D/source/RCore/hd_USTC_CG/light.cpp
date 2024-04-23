@@ -104,7 +104,7 @@ Color Hd_USTC_CG_Sphere_Light::Sample(
 
     auto basis = constructONB(-distanceVec.GetNormalized());
 
-    auto distance = distanceVec.GetLength();
+    
 
     // A sphere light is treated as all points on the surface spreads energy uniformly:
     float sample_pos_pdf;
@@ -115,7 +115,7 @@ Color Hd_USTC_CG_Sphere_Light::Sample(
 
     auto sampledPosOnSurface = worldSampledDir * radius + position;
     sampled_light_pos = sampledPosOnSurface;
-
+    auto distance = (sampledPosOnSurface-pos).GetLength();
     // Then we can decide the direction.
     dir = (sampledPosOnSurface - pos).GetNormalized();
 
@@ -261,7 +261,7 @@ Color Hd_USTC_CG_Rect_Light::Sample(
     dir = lightVec.GetNormalized();
     auto normal = GfCross(e1, e2).GetNormalized();
     float cosVal = (GfDot(-dir, normal));
-    float distance = (corner0 + 0.5 * e1 + 0.5 * e2 - pos).GetLength();
+    float distance = (sampledPosOnSurface - pos).GetLength();
     float area = width * height;
     sample_light_pdf = distance * distance / (area * cosVal);
     if (cosVal < 0)
@@ -289,8 +289,8 @@ Color Hd_USTC_CG_Rect_Light::Intersect(const GfRay& ray, float& depth)
     }
     GfVec3d p = pos + t * dir;
     GfVec3d d = p - corner0;
-    float u1 = GfDot(d, e1);
-    float u2 = GfDot(d, e2);
+    float u1 = GfDot(d, e1.GetNormalized());
+    float u2 = GfDot(d, e2.GetNormalized());
     if (u1 < 0 || u1 > height || u2 < 0 || u2 > width)
     {
         depth = std::numeric_limits<float>::infinity();
