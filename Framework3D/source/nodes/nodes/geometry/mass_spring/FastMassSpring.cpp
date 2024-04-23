@@ -24,5 +24,7 @@ void FastMassSpring::step()
         // (HW Optional)
         // local_step and global_step alternating solving
     }
+}
+
 }  // namespace USTC_CG::node_mass_spring
 }  // namespace USTC_CG::node_mass_spring
