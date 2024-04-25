@@ -93,7 +93,7 @@ void MassSpring::step()
     }
     else if (time_integrator == SEMI_IMPLICIT_EULER) {
         // Semi-implicit Euler
-<<<<<<< HEAD
+
         Eigen::MatrixXd acceleration = -computeGrad(stiffness);
         acceleration = acceleration / mass_per_vertex;
         acceleration.rowwise() += acceleration_ext.transpose();      
@@ -110,11 +110,6 @@ void MassSpring::step()
         X += h * vel;
         
 
-
-=======
-        Eigen::MatrixXd acceleration = -computeGrad(stiffness) / mass_per_vertex;
-        acceleration.rowwise() += acceleration_ext.transpose();
->>>>>>> c7d7312fe05642bb89d7b8246f4aba5da81d3256
 
         // -----------------------------------------------
         // (HW Optional)
