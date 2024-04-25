@@ -5,8 +5,8 @@
 #include "Nodes/node.hpp"
 #include "Nodes/node_declare.hpp"
 #include "Nodes/node_register.h"
-#include "geom_node_base.h"
-#include "utils/util_openmesh_bind.h"
+#include "../geom_node_base.h"
+#include "util_openmesh_bind.h"
 
 /*
 ** @brief HW4_TutteParameterization

@@ -48,43 +48,124 @@ void MassSpring::step()
         TIC(step)
 
         // (HW TODO)
+        
+        //compute Y
+        MatrixXd Y = MatrixXd::Zero(n_vertices * 3, 1);
+        MatrixXd currentX = MatrixXd::Zero(n_vertices * 3, 1);
+        
+        for (size_t i = 0; i < n_vertices; i++) {
+            for (int j = 0; j < 3; j++) {    
+                currentX(3 * i + j, 0) = X(i, j);
+                if (dirichlet_bc_mask[i]) {
+                    Y(3 * i + j, 0) = X(i,j);
+                }
+                else {
+                    Y(3 * i + j, 0) = X(i, j) + h * vel(i,j) + h * h *acceleration_ext[j];
+                }
+            }
+        }
+        MatrixXd x = Y;
+        //init f int
+        MatrixXd f_int = MatrixXd::Zero(n_vertices, 3);
+        Eigen::SparseMatrix<double> g_m;
+        Eigen::MatrixXd g;
+        g_m.resize(3 * n_vertices, 3 * n_vertices);
+        g.resize(3 * n_vertices, 1);
         double maxerror = 0;
         int itr = 0;
-
         do {
-            auto H_elastic = computeHessianSparse(stiffness);  // size = [nx3, nx3]
-            // compute gradG
-            MatrixXd gradG = MatrixXd::Zero(n_vertices * 3, 1);
-            auto gradE = computeGrad(stiffness);
+            g_m.setZero();
+            //Get f_int and Found Coff Matrix
+            std::vector<Triplet<double>> tripletlist;                    
+            unsigned i = 0;           
+            const auto I = Eigen::MatrixXd::Identity(3, 3);            
+            for (const auto& e : E) {               
+                //Eigen::MatrixXd currentH = Eigen::MatrixXd::Zero(3, 3);
+                //auto xi = X.row(e.first) - X.row(e.second);
+                MatrixXd f1(3, 1);
+                for (int k = 0; k < 3; k++) {
+                    f1(k, 0) = (x(3 * e.second + k, 0) - x(3 * e.first + k, 0));
+                }
+                double norm12 = f1.norm();
+                double k1 = stiffness * (1 - E_rest_length[i] / norm12);
+                for (int k = 0; k < 3; k++) {
+                    f_int(e.first,k) += k1 * f1(k, 0);
+                    f_int(e.second,k) -= k1 * f1(k, 0);
+                }
+                auto f1t = f1.transpose();
+                MatrixXd f1_d_x1 =
+                    -stiffness * E_rest_length[i] / (norm12 * norm12 * norm12) * f1 * f1t;
+                f1_d_x1(0, 0) -= k1;
+                f1_d_x1(1, 1) -= k1;
+                f1_d_x1(2, 2) -= k1;
+
+                //Save d_f_int
+                if (!dirichlet_bc_mask[e.first])
+                {
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            tripletlist.push_back(
+                                Triplet<double>(3 * e.first + i, 3 * e.second + j, h * h * f1_d_x1(i, j)));
+                            tripletlist.push_back(
+                                Triplet<double>(3 * e.first + i, 3 * e.first + j, -h * h * f1_d_x1(i, j)));
+                        }
+                    }
+                }
+                if (!dirichlet_bc_mask[e.second]) {
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            tripletlist.push_back(
+                                Triplet<double>(3 * e.second + i, 3 * e.first + j, h * h * f1_d_x1(i, j)));
+                            tripletlist.push_back(
+                                Triplet<double>(3 * e.second + i, 3 * e.second + j, -h * h * f1_d_x1(i, j)));
+                        }
+                    }
+                }
+                i++;
+            }
+            
+            //Found Coff Matrix
+            for (size_t k = 0; k < 3 * n_vertices; k++) {
+                tripletlist.push_back(Triplet<double>(k, k, mass_per_vertex));
+            }
+            g_m.setFromTriplets(tripletlist.begin(), tripletlist.end());
+            g_m.makeCompressed();
+            Eigen::SparseLU<Eigen::SparseMatrix<double>> g_LU;
+            g_LU.compute(g_m);
+
+            //Get g(x)
+            
             for (size_t i = 0; i < n_vertices; i++) {
-                if (!dirichlet_bc_mask[i]) {
-                    for (size_t j = 0; j < 3; j++) {
-                        gradG(3 * i + j, 0) +=
-                            mass_per_vertex * (-vel(i, j) / h - acceleration_ext[j]);
-                        gradG(3 * i + j, 0) += gradE(i, j);
+                for (int j = 0; j < 3; j++) {
+                    if (dirichlet_bc_mask[i]) {
+                        g(3 * i + j, 0) = 0;
+                    }
+                    else {
+                        g(3 * i + j, 0) =
+                            mass_per_vertex * (x(3 * i + j, 0) - Y(3 * i + j, 0)) - h * h * f_int(i,j);
                     }
                 }
             }
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> g_LU;
-            g_LU.compute(H_elastic);
-            auto U = g_LU.solve(gradG);
-            for (int i = 0; i < n_vertices; i++) {
-                for (int j = 0; j < 3; j++) {
-                    X(i, j) -= U(3 * i + j);
-                    vel(i, j) = -U(3 * i + j) / h;
-                }
-            }
+            Eigen::MatrixXd U = g_LU.solve(g);
+            x -= U;
             maxerror = 0;
             for (size_t i = 0; i < 3 * n_vertices; i++) {
                 if (maxerror < fabs(U(i, 0))) {
                     maxerror = fabs(U(i, 0));
                 }
-            }
+            }                               
             itr++;
-        } while (maxerror > 10e-6 && itr <= 5);
-        
+        } while (maxerror > 10e-6 && itr <= 3);
 
-        
+        //set vel
+        for (int i = 0; i < n_vertices; i++) {
+            if (!dirichlet_bc_mask[i]) {
+                for (int j = 0; j < 3; j++) {
+                    vel(i, j) = damping*(x(3 * i + j, 0) - X(i,j)) / h;
+                    X(i, j) = x(3 * i + j, 0);
+                }
+            }
+        }    
         // Solve Newton's search direction with linear solver 
         
         // update X and vel 
@@ -175,7 +256,6 @@ Eigen::SparseMatrix<double> MassSpring::computeHessianSparse(double stiffness)
 {
     unsigned n_vertices = X.rows();
     Eigen::SparseMatrix<double> H(n_vertices * 3, n_vertices * 3);
-
     unsigned i = 0;
     auto k = stiffness;
     const auto I = Eigen::MatrixXd::Identity(3, 3);
@@ -191,7 +271,7 @@ Eigen::SparseMatrix<double> MassSpring::computeHessianSparse(double stiffness)
         currentH += stiffness*xi.transpose() * xi/xi_norm/xi_norm;
         currentH += stiffness * (1 - E_rest_length[i] / xi_norm) *
                     (I - xi.transpose() * xi / xi_norm / xi_norm);
-        if (!dirichlet_bc_mask[e.first])
+        if (dirichlet_bc_mask[e.first])
         {
             for (int i = 0; i < 3; i++)
             {
@@ -204,7 +284,8 @@ Eigen::SparseMatrix<double> MassSpring::computeHessianSparse(double stiffness)
                 }
             }
         }
-        if (!dirichlet_bc_mask[e.first]) {
+        if (dirichlet_bc_mask[e.first]) 
+        {
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     tripletlist.push_back(
