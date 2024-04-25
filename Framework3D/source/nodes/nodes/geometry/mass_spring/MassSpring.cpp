@@ -60,10 +60,24 @@ void MassSpring::step()
         TOC(step)
     }
     else if (time_integrator == SEMI_IMPLICIT_EULER) {
-
         // Semi-implicit Euler
         Eigen::MatrixXd acceleration = -computeGrad(stiffness);
-        acceleration.rowwise() += acceleration_ext.transpose();
+        acceleration = acceleration / mass_per_vertex;
+        acceleration.rowwise() += acceleration_ext.transpose();      
+        Vector3d Fix(0.0, 0.0, 0.0);
+        for (int i = 0; i < X.rows(); i++)
+        {
+            if (dirichlet_bc_mask[i])
+            {
+                acceleration.row(i) = Fix;
+            }
+        }
+        vel += h  * acceleration;
+        vel *= damping;
+        X += h * vel;
+        
+
+
 
         // -----------------------------------------------
         // (HW Optional)
@@ -105,10 +119,20 @@ Eigen::MatrixXd MassSpring::computeGrad(double stiffness)
 {
     Eigen::MatrixXd g = Eigen::MatrixXd::Zero(X.rows(), X.cols());
     unsigned i = 0;
+    
+
     for (const auto& e : E) {
         // --------------------------------------------------
         // (HW TODO): Implement the gradient computation
-        
+        auto xi = X.row(e.first) - X.row(e.second);
+        /*auto x1 = xi[0];
+        auto x2 = xi[1];
+        auto x3 = xi[2];*/
+        double l = E_rest_length[i];
+        double currentLen = xi.norm();
+        auto GradE = stiffness * (currentLen - l) * xi / currentLen;
+        g.row(e.first) += GradE;
+        g.row(e.second) += -GradE;
         // --------------------------------------------------
         i++;
     }

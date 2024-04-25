@@ -117,7 +117,7 @@ static void node_mass_spring_declare(NodeDeclarationBuilder& b)
 static void node_mass_spring_exec(ExeParams params)
 {
     auto time_code = params.get_input<float>("time_code");
-
+    //throw std::runtime_error("Mass Spring: Need Geometry Input."); 
 
     auto mass_spring = params.get_input<std::shared_ptr<MassSpring>>("Mass Spring");
 
