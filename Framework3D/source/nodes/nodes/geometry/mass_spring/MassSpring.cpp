@@ -48,11 +48,44 @@ void MassSpring::step()
         // Implicit Euler
         TIC(step)
 
-        // (HW TODO) 
-        // auto H_elastic = computeHessianSparse(stiffness);  // size = [nx3, nx3]
+        // (HW TODO)
+        double maxerror = 0;
+        int itr = 0;
 
-        // compute Y 
+        do {
+            auto H_elastic = computeHessianSparse(stiffness);  // size = [nx3, nx3]
+            // compute gradG
+            MatrixXd gradG = MatrixXd::Zero(n_vertices * 3, 1);
+            auto gradE = computeGrad(stiffness);
+            for (size_t i = 0; i < n_vertices; i++) {
+                if (!dirichlet_bc_mask[i]) {
+                    for (size_t j = 0; j < 3; j++) {
+                        gradG(3 * i + j, 0) +=
+                            mass_per_vertex * (-vel(i, j) / h - acceleration_ext[j]);
+                        gradG(3 * i + j, 0) += gradE(i, j);
+                    }
+                }
+            }
+            Eigen::SparseLU<Eigen::SparseMatrix<double>> g_LU;
+            g_LU.compute(H_elastic);
+            auto U = g_LU.solve(gradG);
+            for (int i = 0; i < n_vertices; i++) {
+                for (int j = 0; j < 3; j++) {
+                    X(i, j) -= U(3 * i + j);
+                    vel(i, j) = -U(3 * i + j) / h;
+                }
+            }
+            maxerror = 0;
+            for (size_t i = 0; i < 3 * n_vertices; i++) {
+                if (maxerror < fabs(U(i, 0))) {
+                    maxerror = fabs(U(i, 0));
+                }
+            }
+            itr++;
+        } while (maxerror > 10e-6 && itr <= 5);
+        
 
+        
         // Solve Newton's search direction with linear solver 
         
         // update X and vel 
@@ -147,17 +180,50 @@ Eigen::SparseMatrix<double> MassSpring::computeHessianSparse(double stiffness)
     unsigned i = 0;
     auto k = stiffness;
     const auto I = Eigen::MatrixXd::Identity(3, 3);
+    std::vector<Triplet<double>> tripletlist;
     for (const auto& e : E) {
         // --------------------------------------------------
         // (HW TODO): Implement the sparse version Hessian computation
         // Remember to consider fixed points 
         // You can also consider positive definiteness here
-       
+        Eigen::MatrixXd currentH = Eigen::MatrixXd::Zero(3, 3);
+        auto xi = X.row(e.first) - X.row(e.second);
+        auto xi_norm = xi.norm();
+        currentH += stiffness*xi.transpose() * xi/xi_norm/xi_norm;
+        currentH += stiffness * (1 - E_rest_length[i] / xi_norm) *
+                    (I - xi.transpose() * xi / xi_norm / xi_norm);
+        if (!dirichlet_bc_mask[e.first])
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    tripletlist.push_back(
+                        Triplet<double>(3 * e.first + i, 3 * e.first + j, currentH(i,j)));
+                    tripletlist.push_back(
+                        Triplet<double>(3 * e.first + i, 3 * e.second + j, -currentH(i, j)));
+                }
+            }
+        }
+        if (!dirichlet_bc_mask[e.first]) {
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    tripletlist.push_back(
+                        Triplet<double>(3 * e.second + i, 3 * e.second + j, currentH(i, j)));
+                    tripletlist.push_back(
+                        Triplet<double>(3 * e.second + i, 3 * e.first + j, -currentH(i, j)));
+                }
+            }
+        }
+        auto m = mass / n_vertices / h / h;
+        for (size_t i = 0; i < n_vertices*3; i++) {
+            tripletlist.push_back(Triplet<double>(i, i, m));
+        }        
         // --------------------------------------------------
 
         i++;
     }
-    
+    H.setFromTriplets(tripletlist.begin(), tripletlist.end());
     H.makeCompressed();
     return H;
 }
