@@ -78,63 +78,12 @@ void MassSpring::step()
             //Get f_int and Found Coff Matrix
             std::vector<Triplet<double>> tripletlist;                    
             unsigned i = 0;           
-            const auto I = Eigen::MatrixXd::Identity(3, 3);            
-            for (const auto& e : E) {               
-                //Eigen::MatrixXd currentH = Eigen::MatrixXd::Zero(3, 3);
-                //auto xi = X.row(e.first) - X.row(e.second);
-                MatrixXd f1(3, 1);
-                for (int k = 0; k < 3; k++) {
-                    f1(k, 0) = (x(3 * e.second + k, 0) - x(3 * e.first + k, 0));
-                }
-                double norm12 = f1.norm();
-                double k1 = stiffness * (1 - E_rest_length[i] / norm12);
-                for (int k = 0; k < 3; k++) {
-                    f_int(e.first,k) += k1 * f1(k, 0);
-                    f_int(e.second,k) -= k1 * f1(k, 0);
-                }
-                auto f1t = f1.transpose();
-                MatrixXd f1_d_x1 =
-                    -stiffness * E_rest_length[i] / (norm12 * norm12 * norm12) * f1 * f1t;
-                f1_d_x1(0, 0) -= k1;
-                f1_d_x1(1, 1) -= k1;
-                f1_d_x1(2, 2) -= k1;
-
-                //Save d_f_int
-                if (!dirichlet_bc_mask[e.first])
-                {
-                    for (int i = 0; i < 3; i++) {
-                        for (int j = 0; j < 3; j++) {
-                            tripletlist.push_back(
-                                Triplet<double>(3 * e.first + i, 3 * e.second + j, h * h * f1_d_x1(i, j)));
-                            tripletlist.push_back(
-                                Triplet<double>(3 * e.first + i, 3 * e.first + j, -h * h * f1_d_x1(i, j)));
-                        }
-                    }
-                }
-                if (!dirichlet_bc_mask[e.second]) {
-                    for (int i = 0; i < 3; i++) {
-                        for (int j = 0; j < 3; j++) {
-                            tripletlist.push_back(
-                                Triplet<double>(3 * e.second + i, 3 * e.first + j, h * h * f1_d_x1(i, j)));
-                            tripletlist.push_back(
-                                Triplet<double>(3 * e.second + i, 3 * e.second + j, -h * h * f1_d_x1(i, j)));
-                        }
-                    }
-                }
-                i++;
-            }
-            
-            //Found Coff Matrix
-            for (size_t k = 0; k < 3 * n_vertices; k++) {
-                tripletlist.push_back(Triplet<double>(k, k, mass_per_vertex));
-            }
-            g_m.setFromTriplets(tripletlist.begin(), tripletlist.end());
-            g_m.makeCompressed();
+            const auto I = Eigen::MatrixXd::Identity(3, 3);           
+            f_int = -computeGrad(stiffness);
+            g_m = computeHessianSparse(stiffness);
             Eigen::SparseLU<Eigen::SparseMatrix<double>> g_LU;
             g_LU.compute(g_m);
-
-            //Get g(x)
-            
+            //Get grad g(x)            
             for (size_t i = 0; i < n_vertices; i++) {
                 for (int j = 0; j < 3; j++) {
                     if (dirichlet_bc_mask[i]) {
@@ -260,49 +209,58 @@ Eigen::SparseMatrix<double> MassSpring::computeHessianSparse(double stiffness)
     auto k = stiffness;
     const auto I = Eigen::MatrixXd::Identity(3, 3);
     std::vector<Triplet<double>> tripletlist;
+    Eigen::MatrixXd f_int = Eigen::MatrixXd::Zero(n_vertices, 3);
     for (const auto& e : E) {
         // --------------------------------------------------
         // (HW TODO): Implement the sparse version Hessian computation
         // Remember to consider fixed points 
         // You can also consider positive definiteness here
-        Eigen::MatrixXd currentH = Eigen::MatrixXd::Zero(3, 3);
-        auto xi = X.row(e.first) - X.row(e.second);
-        auto xi_norm = xi.norm();
-        currentH += stiffness*xi.transpose() * xi/xi_norm/xi_norm;
-        currentH += stiffness * (1 - E_rest_length[i] / xi_norm) *
-                    (I - xi.transpose() * xi / xi_norm / xi_norm);
-        if (dirichlet_bc_mask[e.first])
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    tripletlist.push_back(
-                        Triplet<double>(3 * e.first + i, 3 * e.first + j, currentH(i,j)));
-                    tripletlist.push_back(
-                        Triplet<double>(3 * e.first + i, 3 * e.second + j, -currentH(i, j)));
-                }
-            }
+        MatrixXd f1(3, 1);
+        for (int k = 0; k < 3; k++) {
+            f1(k, 0) = (X(e.second, k) - X(e.first, k));
         }
-        if (dirichlet_bc_mask[e.first]) 
-        {
+        double norm12 = f1.norm();
+        double k1 = stiffness * (1 - E_rest_length[i] / norm12);
+        for (int k = 0; k < 3; k++) {
+            f_int(e.first, k) += k1 * f1(k, 0);
+            f_int(e.second, k) -= k1 * f1(k, 0);
+        }
+        auto f1t = f1.transpose();
+        MatrixXd f1_d_x1 = -stiffness * E_rest_length[i] / (norm12 * norm12 * norm12) * f1 * f1t;
+        f1_d_x1(0, 0) -= k1;
+        f1_d_x1(1, 1) -= k1;
+        f1_d_x1(2, 2) -= k1;
+
+        // Save d_f_int
+        if (!dirichlet_bc_mask[e.first]) {
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     tripletlist.push_back(
-                        Triplet<double>(3 * e.second + i, 3 * e.second + j, currentH(i, j)));
+                        Triplet<double>(3 * e.first + i, 3 * e.second + j, h * h * f1_d_x1(i, j)));
                     tripletlist.push_back(
-                        Triplet<double>(3 * e.second + i, 3 * e.first + j, -currentH(i, j)));
+                        Triplet<double>(3 * e.first + i, 3 * e.first + j, -h * h * f1_d_x1(i, j)));
                 }
             }
         }
-        auto m = mass / n_vertices / h / h;
-        for (size_t i = 0; i < n_vertices*3; i++) {
-            tripletlist.push_back(Triplet<double>(i, i, m));
-        }        
+        if (!dirichlet_bc_mask[e.second]) {
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    tripletlist.push_back(
+                        Triplet<double>(3 * e.second + i, 3 * e.first + j, h * h * f1_d_x1(i, j)));
+                    tripletlist.push_back(Triplet<double>(
+                        3 * e.second + i, 3 * e.second + j, -h * h * f1_d_x1(i, j)));
+                }
+            }
+        }
         // --------------------------------------------------
 
         i++;
     }
+    auto mass_per_vertex = mass / n_vertices;
+    for (size_t k = 0; k < 3 * n_vertices; k++) {
+        tripletlist.push_back(Triplet<double>(k, k, mass_per_vertex));
+    }
+
     H.setFromTriplets(tripletlist.begin(), tripletlist.end());
     H.makeCompressed();
     return H;
