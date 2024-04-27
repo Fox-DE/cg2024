@@ -123,8 +123,16 @@ void MassSpring::step()
     }
     else if (time_integrator == SEMI_IMPLICIT_EULER) {
         // Semi-implicit Euler
+        // -----------------------------------------------
 
-        Eigen::MatrixXd acceleration = -computeGrad(stiffness);
+
+        // -----------------------------------------------
+
+        Eigen::MatrixXd acceleration = -computeGrad(stiffness);   
+        // (HW Optional)
+        if (enable_sphere_collision) {
+            acceleration += acceleration_collision;
+        }
         acceleration = acceleration / mass_per_vertex;
         acceleration.rowwise() += acceleration_ext.transpose();      
         Vector3d Fix(0.0, 0.0, 0.0);
@@ -141,12 +149,6 @@ void MassSpring::step()
         
 
 
-        // -----------------------------------------------
-        // (HW Optional)
-        if (enable_sphere_collision) {
-            acceleration += acceleration_collision;
-        }
-        // -----------------------------------------------
 
         // (HW TODO): Implement semi-implicit Euler time integration
 
@@ -289,6 +291,16 @@ Eigen::MatrixXd MassSpring::getSphereCollisionForce(Eigen::Vector3d center, doub
 {
     Eigen::MatrixXd force = Eigen::MatrixXd::Zero(X.rows(), X.cols());
     for (int i = 0; i < X.rows(); i++) {
+        Vector3d x_c = { X(i, 0) - center[0], X(i, 1) - center[1], X(i, 2) - center[2] };
+        //auto x_c = X.row(i) - center;
+         double norm = x_c.norm();
+         auto dis = collision_scale_factor * radius - norm;
+        if (dis > 0)
+        {
+            Vector3d f_sphere = collision_penalty_k * dis * x_c / norm;
+            force.row(i) = f_sphere;
+        }
+
        // (HW Optional) Implement penalty-based force here 
     }
     return force;
