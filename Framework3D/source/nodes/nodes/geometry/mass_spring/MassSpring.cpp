@@ -51,11 +51,11 @@ void MassSpring::step()
         
         //compute Y
         MatrixXd Y = MatrixXd::Zero(n_vertices * 3, 1);
-        MatrixXd currentX = MatrixXd::Zero(n_vertices * 3, 1);
+        //MatrixXd currentX = MatrixXd::Zero(n_vertices * 3, 1);
         
         for (size_t i = 0; i < n_vertices; i++) {
             for (int j = 0; j < 3; j++) {    
-                currentX(3 * i + j, 0) = X(i, j);
+                //currentX(3 * i + j, 0) = X(i, j);
                 if (dirichlet_bc_mask[i]) {
                     Y(3 * i + j, 0) = X(i,j);
                 }
@@ -193,9 +193,6 @@ Eigen::MatrixXd MassSpring::computeGrad(double stiffness)
         // --------------------------------------------------
         // (HW TODO): Implement the gradient computation
         auto xi = X.row(e.first) - X.row(e.second);
-        /*auto x1 = xi[0];
-        auto x2 = xi[1];
-        auto x3 = xi[2];*/
         double l = E_rest_length[i];
         double currentLen = xi.norm();
         auto GradE = stiffness * (currentLen - l) * xi / currentLen;

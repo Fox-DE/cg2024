@@ -15,6 +15,7 @@ class FastMassSpring : public MassSpring {
 
    protected:
     // Custom variables, like prefactorized A 
-   
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> A_LU;
+    Eigen::SparseMatrix<double> J;
 };
 }  // namespace USTC_CG::node_mass_spring
