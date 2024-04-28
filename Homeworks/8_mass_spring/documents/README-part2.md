@@ -1,4 +1,4 @@
-# 弹簧质点系统仿真简明教程 Part 2 之加速方法
+ # 弹簧质点系统仿真简明教程 Part 2 之加速方法
 
 如果你已经完成了Part 1，那么欢迎你来到弹簧质点系统仿真的进阶教程。我们将介绍刘天添老师在论文[Fast Simulation of Mass-Spring Systems](https://tiantianliu.cn/papers/liu13fast/liu13fast.pdf)中提出的加速方法，并解释论文中公式的含义。
 
@@ -6,7 +6,7 @@
 
 ## 1. 弹性能量的新视角
 
-在Part 1中我们说过，弹簧质点系统中每一根弹簧的能量可以定义为（Liu的论文中使用$\mathbf{p}$表示顶点位置）:
+在Part 1中我们说过，弹簧质点系统中每一根弹簧的能量可以定义为（Liu的论文中使用 $\mathbf{p}$ 表示顶点位置）:
 
 $$
 E_i = \frac{1}{2} k (\|\mathbf{x}_{i}\| -L)^2  \tag{1}
@@ -103,6 +103,8 @@ $$
 这里我们就会发现 $\mathbf{A}$ 为正定的，并且在弹簧系统拓扑不变的情况下， $\mathbf{A}$ 也不会变，所以只需要在仿真一开始计算一次！因此我们可以对 $\mathbf{A}$ 进行预分解，然后每次迭代只需要更新 $\mathbf{b}$ ，然后不断调用预分解好的求解器计算即可！这就是该加速方法最为核心的地方。
 
 并且本质上， $\mathbf{A} = \mathbf{M} + h^2 \mathbf{L}$ 是对系统能量的 Hessian矩阵的一种近似，其中 $\mathbf{L}$ 是系统的拉普拉斯（Laplacian）矩阵。
+
+需要注意的是：求解的时候因为 $\mathbf{y}$ 的定义为  $\mathbf{y} := \mathbf{x}^n + h \mathbf{v}^n + h^2 \mathbf{M}^{-1} \mathbf{f}_{\text{ext}}$，而每次迭代求解的 $\mathbf{x}$ 为 $\mathbf{x}^{n+1}$，所以 $\mathbf{y}$ 不需要更新，仍然用上一步的 $\mathbf{x}^n$ 和 $\mathbf{v}^n$。
 
 整个方法的流程示意图如下：
 
