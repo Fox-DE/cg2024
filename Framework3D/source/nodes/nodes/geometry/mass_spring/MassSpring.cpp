@@ -61,6 +61,10 @@ void MassSpring::step()
                 }
                 else {
                     Y(3 * i + j, 0) = X(i, j) + h * vel(i,j) + h * h *acceleration_ext[j];
+                    if (enable_sphere_collision)
+                    {
+                        Y(3 * i + j, 0) += h * h / mass_per_vertex * acceleration_collision(i, j);
+                    }
                 }
             }
         }
