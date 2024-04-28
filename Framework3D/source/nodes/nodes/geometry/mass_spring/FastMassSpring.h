@@ -20,7 +20,6 @@ class FastMassSpring : public MassSpring {
     Eigen::SparseMatrix<double> M_h2L;
     Eigen::MatrixXd b;  // x-K*Kt*x
     Eigen::SparseMatrix<double> K;
-    Eigen::SparseMatrix<double> Kt;  // K transpose
     Eigen::MatrixXd y_acc;
     Eigen::MatrixXd d;
     Eigen::MatrixXd x_nacc;

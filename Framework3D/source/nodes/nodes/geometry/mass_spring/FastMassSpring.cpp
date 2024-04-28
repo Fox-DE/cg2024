@@ -58,6 +58,7 @@ MassSpring(X, E){
                 m_size++;
         }
     }
+    //m_size means the num of free var
     K.resize(3 * m_size, 3 * n_vertices);
     int j = 0;
     for (size_t i = 0; i < n_vertices; i++) {
@@ -74,12 +75,11 @@ MassSpring(X, E){
         }
     }
     K.setFromTriplets(tripletlistK.begin(), tripletlistK.end());
-    Kt = K.transpose();
     //Found A
     Eigen::SparseMatrix<double> A;
     if (n_vertices-m_size>0)
     {
-        A = K * M_h2L * Kt;
+        A = K * M_h2L * K.transpose();
     }
     else
     {
@@ -100,7 +100,7 @@ void FastMassSpring::step()
     Eigen::Vector3d acceleration_ext = gravity + wind_ext_acc;
     unsigned n_vertices = X.rows();
     double mass_per_vertex = mass/n_vertices ;
-    //get x_na and y
+    //get x_nacc and y_acc
     for (size_t i = 0; i < n_vertices; i++) {
         for (int j = 0; j < 3; j++) {
                 x_nacc(3 * i + j, 0) = X(i,j);
@@ -110,12 +110,12 @@ void FastMassSpring::step()
     //Get d
     unsigned spring = 0;
     for (const auto& e : E) {
-        auto p1 = X.row(e.first);
-        auto p2 = X.row(e.second);
-        auto norm = (p1 - p2).norm();
+        auto x1 = X.row(e.first);
+        auto x2 = X.row(e.second);
+        auto norm = (x1 - x2).norm();
         auto l = E_rest_length[spring];
         for (int j = 0; j < 3; j++) {
-                d(3 * spring + j, 0) = l / norm * (p1[j] - p2[j]);
+                d(3 * spring + j, 0) = l / norm * (x1[j] - x2[j]);
         }
         spring++;
     }
@@ -124,17 +124,16 @@ void FastMassSpring::step()
         // (HW Optional)
         // local_step and global_step alternating solving
         //std::cout << K << std::endl;
-        MatrixXd part1 = h * h * J * d;
+        /* MatrixXd part1 = h * h * J * d;
         MatrixXd part2 = mass_per_vertex * y_acc;
-        MatrixXd part3 = M_h2L * b;
-        MatrixXd xr0 = (h * h * J * d + mass_per_vertex * y_acc - M_h2L * b);
-        MatrixXd xr = K * xr0;
-        MatrixXd xa = A_LU.solve(xr);
+        MatrixXd part3 = M_h2L * b;*/
+        //MatrixXd xr = ;
+        MatrixXd xa = A_LU.solve(K *(h * h * J * d + mass_per_vertex * y_acc - M_h2L * b));
         //std::cout << M_h2L << std::endl;
         //std::cout << b << std::endl;
 
         //update x_nacc
-       size_t j = 0;
+        unsigned j = 0;
         for (size_t i = 0; i < n_vertices; i++) {
                 if (!dirichlet_bc_mask[i]) {
                     for (int k = 0; k < 3; k++) {
@@ -147,20 +146,20 @@ void FastMassSpring::step()
         //update d for next itr
         unsigned i = 0;
         for (const auto& e : E) {
-                Vector3d p1, p2;
+                Vector3d x1, x2;
                 for (int k = 0; k < 3; k++) {
-                    p1[k] = x_nacc(3 * e.first + k, 0);
-                    p2[k] = x_nacc(3 * e.second + k, 0);
+                    x1[k] = x_nacc(3 * e.first + k, 0);
+                    x2[k] = x_nacc(3 * e.second + k, 0);
                 }
-                double dist = (p1 - p2).norm();
+                double dist = (x1 - x2).norm();
                 double l = E_rest_length[i];
                 for (int j = 0; j < 3; j++) {
-                    d(3 * i + j, 0) = l / dist * (p1[j] - p2[j]);
+                    d(3 * i + j, 0) = l / dist * (x1[j] - x2[j]);
                 }
                 i++;
         }
     }
-
+    //update X and Vel
 	for (int i = 0; i < n_vertices; i++) {
         if (!dirichlet_bc_mask[i]) {
                 for (int j = 0; j < 3; j++) {
