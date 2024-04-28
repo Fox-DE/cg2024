@@ -94,6 +94,7 @@ MassSpring(X, E){
 
 void FastMassSpring::step()
 {
+    TIC(acc_implicit)
     // (HW Optional) Necessary preparation
     // ...
     Eigen::Vector3d acceleration_ext = gravity + wind_ext_acc;
@@ -103,7 +104,7 @@ void FastMassSpring::step()
     for (size_t i = 0; i < n_vertices; i++) {
         for (int j = 0; j < 3; j++) {
                 x_nacc(3 * i + j, 0) = X(i,j);
-                y_acc(3 * i + j, 0) = X(i, j) + h * vel(i,j) + h * h* acceleration_ext[j]/mass_per_vertex;
+                y_acc(3 * i + j, 0) = X(i, j) + h * vel(i,j) + h * h* acceleration_ext[j];
         }
     }
     //Get d
@@ -168,24 +169,7 @@ void FastMassSpring::step()
                 }
         }
     }
-    //std::cout << X << std::endl;
-
-    //std::cout << x <<std::endl;
-    //set X
-    //for (int i = 0; i < n_vertices; i++)
-
-
-    //set vel and X
-    /* for (int i = 0; i < n_vertices; i++) {
-        if (!dirichlet_bc_mask[i]) {
-            for (int j = 0; j < 3; j++) {
-               vel(i, j) = (x(3 * i + j, 0) - X(i, j)) / h;
-                X(i, j) = x(3 * i + j, 0);
-            }
-        }
-    } */   
-    //std::cout << X << std::endl;
-
+    TOC(acc_implicit)
 }
 
 }  // namespace USTC_CG::node_mass_spring
