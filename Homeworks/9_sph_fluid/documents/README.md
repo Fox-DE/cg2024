@@ -31,7 +31,7 @@ $$
 > 扩展阅读：我们这里和课上只使用了NS方程的微分形式，但实际上，根据数学建模的不同，NS方程还有其他微分与积分形式。
 
 值得一提的是，(1)式中的 $\frac{D \cdot}{D t}$ 被称为“物质导数 (Material derivative)” 或 “随体导数 (derivative following the motion)”，是全导数在流体力学中的特例：
- 
+
 考虑一个跟随流体运动的流体微团，以其为采样点，采样一个空间位置 $\mathbf{x}$ 和时间 $t$ 为自变量的4维物理场 $f = f(\mathbf{x}, t)$（如流体的密度场、压强场、速度场等），流体微团的空间位置 $\mathbf{x} = \mathbf{x}(t)$ 也是时间的函数。那么采样点上的 $f$ 关于 $t$ 的全导数为： $\frac{d f}{d t} = \frac{\partial f}{\partial t} + \frac{\partial f}{\partial x}\frac{\partial x}{\partial t} = \frac{\partial f}{\partial t} + \mathbf{v}\cdot \nabla f$ , 我们将其称为运动的流体微团上物理场 $f$ 的物质导数，记为 $\frac{D f}{Dt}$，它同时考虑了 $f$ 由于时间推移自身的变化和采样点空间运动两个原因带来的变化。
 
 > 举两个例子：
@@ -149,8 +149,10 @@ for (auto& p : ps_.particles()) {
 SPH中密度的计算公式为：
 
 $$
- \rho_i = \sum_{j+i} \left(\frac{m_j}{\rho_j} \right) m_j W(\mathbf{x}_ i - \mathbf{x}_ j, h) =  \sum_{j+i} m_j  W_{ij}
+\rho_i = \sum_{j+i} \left(\frac{m_j}{\rho_j} \right) m_j W(\mathbf{x}_ i - \mathbf{x}_ j, h) =  \sum_{j+i} m_j  W_{ij}
 $$
+
+疑似打错，应为rou j，随后消掉只剩下质量m
 
 这里我们记 $W_{ij} = W(\mathbf{x}_i, \mathbf{x}_j, h)$， $j$ 表示粒子 $i$ 的所有邻居粒子。 在SPH方法中， $h$ 表示核函数半径，我们用 $\Delta t$ 来表示时间步长。
 
