@@ -99,7 +99,10 @@ void SPHBase::compute_pressure()
 void SPHBase::compute_non_pressure_acceleration()
 {
     // (HW TODO) Traverse all particles to compute each particle's non-pressure acceleration 
-    for (auto& p : ps_.particles()) {
+
+        #pragma omp parallel for
+    for (int par = 0; par < ps_.particles().size(); par++) {
+        auto& p = ps_.particles()[par];    
         Vector3d acceleration = gravity_;
         // necessary code here to compute particle p's acceleration include gravity and viscosity
         // We do not consider surface tension in this assignment, but you can add it if you like
@@ -139,7 +142,9 @@ Vector3d SPHBase::compute_viscosity_acceleration(
 // Traverse all particles and compute pressure gradient acceleration
 void SPHBase::compute_pressure_gradient_acceleration()
 {
-    for (auto& p : ps_.particles()) {
+#pragma omp parallel for
+    for (int par = 0; par < ps_.particles().size(); par++) {
+        auto& p = ps_.particles()[par];
         Vector3d acceleration = Vector3d::Zero();
         for (auto& q : p->neighbors()) {
             acceleration = acceleration - ps_.mass() *
@@ -161,9 +166,9 @@ void SPHBase::step()
 
 void SPHBase::advect()
 {
-    for (auto& p : ps_.particles())  
-    {
-
+#pragma omp parallel for
+    for (int par = 0; par < ps_.particles().size(); par++) {
+        auto& p = ps_.particles()[par];
         // ---------------------------------------------------------
         // (HW TODO) Implement the advection step of each particle
         // Remember to check collision after advection

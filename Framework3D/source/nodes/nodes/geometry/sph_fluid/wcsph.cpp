@@ -1,5 +1,6 @@
 #include "wcsph.h"
 #include <iostream>
+#include <omp.h>
 using namespace Eigen;
 
 namespace USTC_CG::node_sph_fluid {
@@ -16,14 +17,15 @@ void WCSPH::compute_density()
     // You can also compute pressure in this function 
 	// -------------------------------------------------------------
     //override this function to compute density and pressure at the same time
-    for (auto& p : ps_.particles()) {
-            
-        auto density = ps_.mass() * W_zero(ps_.h());       
-               
+    #pragma omp parallel for
+        for (int par = 0; par < ps_.particles().size(); par++) 
+    {
+        auto& p = ps_.particles()[par];
+        auto density = ps_.mass() * W_zero(ps_.h());
+
         for (auto& q : p->neighbors()) {
-                density += ps_.mass() * W(p->x() - q->x(), ps_.h());
-               
-        }
+              density += ps_.mass() * W(p->x() - q->x(), ps_.h());
+         }
         p->density_ = density;
         double pi = stiffness_ * (pow(density / ps_.density0(), exponent_) - 1.0);
         p->pressure_ = std::max(pi, 0.0);
@@ -34,7 +36,7 @@ void WCSPH::compute_density()
 
 void WCSPH::step()
 {
-    TIC(step)
+    TIC(step1)
     // -------------------------------------------------------------
     // (HW TODO) Follow the instruction in documents and PPT,
     // implement the pipeline of fluid simulation
@@ -43,13 +45,26 @@ void WCSPH::step()
     // Search neighbors, compute density, advect, solve pressure acceleration, etc.
     ps_.assign_particles_to_cells();
     ps_.searchNeighbors();
+    TOC(step1)
+    TIC(step2)
     compute_density();
     this->compute_non_pressure_acceleration();
-    for (auto& p : ps_.particles()) {
-        p->vel_ += dt() * p->acceleration();
+    
+    #pragma omp parallel for
+    for (int par = 0; par < ps_.particles().size(); par++)
+    {
+                auto& p = ps_.particles()[par];
+                p->vel_ += dt() * p->acceleration();
+                //std::cout << par << std::endl;
     }
+    /* for (auto& p : ps_.particles()) {
+              p->vel_ += dt() * p->acceleration();
+    }*/
+
     this->compute_pressure_gradient_acceleration();
-    for (auto& p : ps_.particles()) {
+#pragma omp parallel for
+    for (int par = 0; par < ps_.particles().size(); par++) {
+        auto& p = ps_.particles()[par];
         p->vel_ += dt() * p->acceleration();
         p->x() += p->vel() * dt();
         check_collision(p);
@@ -58,6 +73,6 @@ void WCSPH::step()
 
 
 
-    TOC(step)
+    TOC(step2)
 }
 }  // namespace USTC_CG::node_sph_fluid
