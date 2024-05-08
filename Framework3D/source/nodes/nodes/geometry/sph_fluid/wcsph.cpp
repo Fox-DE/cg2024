@@ -44,7 +44,7 @@ void WCSPH::step()
 
     // Search neighbors, compute density, advect, solve pressure acceleration, etc.
     ps_.assign_particles_to_cells();
-    ps_.searchNeighbors();
+    ps_.search_neighbors();
     TOC(step1)
     TIC(step2)
     compute_density();
