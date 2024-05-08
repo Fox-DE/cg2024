@@ -108,14 +108,15 @@ static double W_zero(double h);
 
 ### 2.1  邻居粒子查找
 
-在SPH中，由于不像弹簧质点系统有固定的拓扑，每一个粒子的邻居都在不断地变化。
-为了查找邻居粒子，这里我们使用了一个空间网格结构。
+在SPH中，由于不像弹簧质点系统有固定的拓扑，每一个粒子的邻居都在不断地变化。为了查找每个粒子的邻居粒子，如果暴力地遍历所有粒子，计算复杂度为 $O(n^2)$ 。
+
+为了提高查找效率，我们使用了一个空间网格加速结构：首先将粒子根据空间位置分配到相应的立方体网格中（网格边长等于核函数半径），然后只需遍历当前格子的邻居网格中的粒子进行距离判断即可，将复杂度降低到了 $O(n \times k)$ ( $k$ 为每个格子中的平均粒子数 )。
 
 <div  align="center">    
  <img src="../images/grid.png" style="zoom:30%" />
 </div>
 
-在每一个时间步的开始，我们需要把粒子分配到网格中，然后更新所有粒子的邻居。
+在每一个时间步的开始，我们需要把粒子分配到网格中，然后更新所有粒子的邻居：
 
 ```C++
 void step()
@@ -136,7 +137,7 @@ for (auto& p : ps_.particles()) {
     for (auto& q : p->neighbors()) {
         auto v_j = q->vel(); 
         double w_ij = W(p->x() - q->x(), ps_.h());
-        Vector3d grad = grad_W(p->x() - q->x(), ps_.h());
+        Vector3d grad_W_ij = grad_W(p->x() - q->x(), ps_.h());
         // ... other code 
     }
 }
@@ -246,6 +247,8 @@ $$
 
 程序中，  $k_1$ 为参数 `stiffness` ,  $k_2$ 为参数 `exponent`  。注意，压强一般需要是大于0的，在粒子不足的时候，可以让 `p_i = max(0.0, p_i)`。  
 
+> 这类公式又被称为 "Equation of State (EOS)"
+
 压力的加速度： $-\frac{1}{\rho} \nabla p$ ， 其中：
 
 $$
@@ -277,17 +280,15 @@ void SPHBase::compute_pressure_gradient_acceleration()
 ```c++
 void WCSPH::step()
 {
-    // Not implemented, should be implemented in children classes WCSPH, IISPH, etc. 
+    // 1. Assign particles to cells & search for neighbors 
 
-    // 1. assign particle to cells & search neighbors 
+    // 2. Compute density (actually, you can directly compute pressure here)
 
-    // 2. compute density (actually, you can direct compute pressure here)
-
-    // 3. compute non-pressure accelerations, e.g. viscosity force, gravity
+    // 3. Compute non-pressure accelerations, e.g. viscosity force, gravity
     
-    // 4. compute pressure gradient acceleration
+    // 4. Compute pressure gradient acceleration
 
-    // 5. update velocity and positions, call advect()
+    // 5. Update velocity and positions, call advect()
 }
 ```
 
@@ -311,16 +312,19 @@ void SPHBase::advect()
 }
 ```
 
+至此，我们已经实现了流体仿真的大部分流程。最后，我们还需要考虑一下流体与固体的交互，这里我们只考虑静止的固体边界，将在下一节介绍。
+
 ## 4. 边界处理
 
 边界处理有多种方式。本次作业我们提供了边界处理的代码。我们采用了简单的反弹策略。
-
 
 <div  align="center">    
  <img src="../images/boundary.png" style="zoom:50%" />
 </div>
 
-代码已经提供在`SPHBase::check_collision()`，反弹的速度可以通过参数`restitution`调整能量保持的比例。
+代码已经提供在[`SPHBase::check_collision()`](https://github.com/USTC-CG/USTC_CG_24/blob/main/Framework3D/source/nodes/nodes/geometry/sph_fluid/sph_base.cpp#L165)，反弹的速度可以通过参数`restitution`调整能量保持的比例。
+
+**注意，如果不处理边界，当流体粒子飞出仿真区域时（即`simulation_box_min`和`simulation_box_max`设定的范围时），会出现空间网格结构的`cell_idx out of range`报错。**
 
 ## 5. 实例结果 & 节点图
 
@@ -350,7 +354,7 @@ void SPHBase::advect()
 
 ## 6. (Optional) 表面重建与渲染
 
-我们提供了`Points to Mesh`节点来从粒子重建mesh，以用于后续的渲染。(目前框架中透明物体的渲染正在施工中，会晚几天发布)
+我们提供了`Points to Mesh`节点来从粒子重建mesh，以用于后续的渲染。
 
 <div  align="center">    
  <img src="../images/wcsph-reconstruct-demo.gif" style="zoom:100%" />
@@ -360,6 +364,12 @@ void SPHBase::advect()
 
 <div  align="center">    
  <img src="../images/node2.png" style="zoom:100%" />
+</div>
+
+渲染节点及渲染效果如下所示。我们在[`./data/`](./data/)文件夹下提供了相应的`RenderGraph.json`与`CompositionGraph.json`以及环境贴图`garden.exr`:
+
+<div  align="center">    
+ <img src="../images/render.png" style="zoom:100%" />
 </div>
 
 
