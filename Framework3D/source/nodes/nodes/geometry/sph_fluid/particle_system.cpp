@@ -46,10 +46,10 @@ ParticleSystem::ParticleSystem(const MatrixXd &X, const Vector3d &box_min, const
     cells_.resize(n_cell_per_axis_[0] * n_cell_per_axis_[1] * n_cell_per_axis_[2]);
 
     assign_particles_to_cells();
-    searchNeighbors();
+    search_neighbors();
 }
 
-void ParticleSystem::searchNeighbors()
+void ParticleSystem::search_neighbors()
 {
     // update the neighbors for each particle
     for (auto &p : particles_) {
@@ -63,7 +63,8 @@ void ParticleSystem::searchNeighbors()
         auto neighbor_cell_indices = get_neighbor_cell_indices(p->X_);
         for (auto &cell_idx : neighbor_cell_indices) {
             for (auto &q : cells_[cell_idx]) {
-                if ((p->X_ - q->X_).norm() < 1.001 * support_radius_) {
+                if ((p->X_ - q->X_).norm() < 1.001 * support_radius_
+                    && p->idx() != q->idx()) {
                     p->neighbors_.push_back(q);
                 }
             }
