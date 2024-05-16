@@ -28,6 +28,7 @@ public:
 
 	GfMatrix4f get_local_transform() { return local_transform_; }
 	GfMatrix4f get_world_transform() { return world_transform_; }
+    GfMatrix4f get_bind_transform()  { return bind_transform_;  }
 
     shared_ptr<Joint> parent_;
     vector<shared_ptr<Joint>> children_;
@@ -41,6 +42,7 @@ private:
 	
 	GfMatrix4f local_transform_;
     GfMatrix4f world_transform_;
+    GfMatrix4f bind_transform_;
 };
 
 class JointTree
@@ -83,6 +85,7 @@ public:
 	void update_mesh_vertices(); 
 
 protected:
+    bool init = true;
 	JointTree joint_tree_;
 	shared_ptr<MeshComponent> mesh_;
 	shared_ptr<SkelComponent> skel_;

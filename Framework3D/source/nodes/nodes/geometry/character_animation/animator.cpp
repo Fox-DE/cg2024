@@ -12,7 +12,25 @@ Joint::Joint(int idx, string name, int parent_idx) : idx_(idx), name_(name), par
 void Joint::compute_world_transform()
 {
     // ---------- (HW TODO) Compute world space trasform of this joint -----------------
-
+    /*
+    if (parent_ == nullptr)
+    {
+        world_transform_ = local_transform_;
+        std::cout <<idx_<< local_transform_ << std::endl;
+        std::cout << idx_ << world_transform_ << std::endl;
+    }
+    else
+    {
+        world_transform_ = parent_->world_transform_ * local_transform_ ;
+        std::cout << idx_ << local_transform_ << std::endl;
+        std::cout << idx_ << world_transform_ << std::endl;
+    }*/
+    if (parent_ == nullptr) {
+        world_transform_ = local_transform_;
+    }
+    else {
+        world_transform_ = parent_->world_transform_ * local_transform_;
+    }
     // --------------------------------------------------------------------------------
 }
 
@@ -20,6 +38,10 @@ void JointTree::compute_world_transforms_for_each_joint()
 {
     // ----------- (HW_TODO) Traverse all joint and compute its world space transform ---
 	// Call compute_world_transform for each joint
+    for (auto joint_ptr : joints_) {
+        joint_ptr->compute_world_transform();
+    }
+    
     // ---------------------------------------------
 }
 
@@ -82,7 +104,11 @@ void Animator::step(const shared_ptr<SkelComponent> skel)
 	joint_tree_.update_joint_local_transform(skel->localTransforms);
 
     joint_tree_.compute_world_transforms_for_each_joint(); 
-
+    if (init)
+    {
+         std::cout << "init" << std::endl;
+         init = false;
+    }
 	update_mesh_vertices();
 }
 
@@ -93,6 +119,56 @@ void Animator::update_mesh_vertices()
 	// 2. For each vertex, compute the new position by transforming the rest position with the joint transforms
 	// 2. Update the vertex position in the mesh
 	// --------------------------------------------------------------------------------
+        /*
+        auto jointIndices = skel_->jointIndices;
+        auto jointWeight = skel_->jointWeight;
+        int stride = jointWeight.size() / mesh_->vertices.size();
+        for (int i = 0; i < mesh_->vertices.size(); i++)
+        {
+            auto start_id = i * stride;
+            auto rest_pos = mesh_->vertices[i];
+            pxr::GfVec3f result(0);
+            for (int j = start_id; j < start_id + stride; j++)
+            {
+                float weight = jointWeight[j];
+                int joint_id = jointIndices[j];
+                auto joint_world_transform = joint_tree_.get_joint(joint_id)->get_world_transform();
+                std::cout << "i" << i << "  joint_id" << joint_id << joint_world_transform
+                          << std::endl;
+                pxr::GfVec4f temp = {rest_pos[0],rest_pos[1],rest_pos[2],1.0};
+
+                GfVec4f tmp2 = weight  * temp *joint_world_transform;
+                GfVec3f tmp3 = { tmp2[0], tmp2[1], tmp2[2] };
+                result += tmp3;
+            }
+            mesh_->vertices[i] = result;
+            auto pos_new = mesh_->vertices[i];
+            std::cout << i << pos_new << std::endl;
+        }*/
+        auto jointIndices = skel_->jointIndices;
+        auto jointWeight = skel_->jointWeight;
+
+        int stride = jointWeight.size() / mesh_->vertices.size();
+
+        for (int i = 0; i < mesh_->vertices.size(); ++i) {
+                auto start_id = i * stride;
+
+                auto rest_pos = mesh_->vertices[i];
+
+                pxr::GfVec3f result(0);
+
+                for (int j = start_id; j < start_id + stride; ++j) {
+            float weight = jointWeight[j];
+
+            int joint_id = jointIndices[j];
+
+            auto joint_world_transform = joint_tree_.get_joint(joint_id)->get_world_transform();
+
+            result += weight * joint_world_transform.TransformAffine(rest_pos);
+                }
+                mesh_->vertices[i] = result;
+        }
+
 }
 
 }  // namespace USTC_CG::node_character_animation
