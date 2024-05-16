@@ -113,28 +113,24 @@ void Animator::update_mesh_vertices()
     // --------------------------------------------------------------------------------
     auto jointIndices = skel_->jointIndices;
     auto jointWeight = skel_->jointWeight;
-
+    
     int stride = jointWeight.size() / mesh_->vertices.size();
 
-    for (int i = 0; i < mesh_->vertices.size(); ++i) {
-        auto start_id = i * stride;
-
-        auto rest_pos = mesh_->vertices[i];
-
-        pxr::GfVec3f result(0);
-
-        for (int j = start_id; j < start_id + stride; ++j) {
-            float weight = jointWeight[j];
-
+    for (int i = 0; i < mesh_->vertices.size(); i++) {
+        auto id_start = stride * i;
+        auto id_end = id_start + stride - 1;
+        auto original_pos = mesh_->vertices[i];
+        GfVec3f new_pos(0);
+        for (int j = id_start; j <= id_end; j++) {            
             int joint_id = jointIndices[j];
-
-            auto joint_world_transform = joint_tree_.get_joint(joint_id)->get_world_transform();
+            float weight = jointWeight[j]; 
             auto bind_transform = joint_tree_.get_joint(joint_id)->get_bind_transform();
-            result +=
+            auto joint_world_transform = joint_tree_.get_joint(joint_id)->get_world_transform();           
+            new_pos +=
                 weight * joint_world_transform.TransformAffine(
-                             bind_transform.GetInverse().TransformAffine(rest_pos));
+                                   bind_transform.GetInverse().TransformAffine(original_pos));
         }
-        mesh_->vertices[i] = result;
+        mesh_->vertices[i] = new_pos;
     }
 
 }
